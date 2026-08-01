@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LearnMate AI — AI Learning Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#4F46E5; --primary-light:#6366F1; --secondary:#7C3AED; --accent:#06B6D4;
+    --success:#22C55E; --warning:#F59E0B; --danger:#EF4444;
+    --bg:#F7F8FC; --surface:#FFFFFF; --ink:#12131A; --ink-soft:#5B5F73;
+    --border:rgba(18,19,26,0.08); --glass:rgba(255,255,255,0.6);
+    --radius:18px; --shadow:0 10px 40px -12px rgba(79,70,229,0.18);
+    --font-display:'Space Grotesk', sans-serif; --font-body:'Inter', sans-serif;
+    --sidebar-w:250px;
+  }
+  [data-theme="dark"]{
+    --bg:#0A0D1A; --surface:#12162A; --ink:#F2F3F8; --ink-soft:#9498B0;
+    --border:rgba(255,255,255,0.08); --glass:rgba(18,22,42,0.6);
+    --shadow:0 10px 45px -12px rgba(124,58,237,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+  body{font-family:var(--font-body);background:var(--bg);color:var(--ink);transition:background 0.4s,color 0.4s;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  ::selection{background:var(--primary);color:#fff;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;}
+  .icon{font-style:normal;line-height:1;display:inline-block;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar (shared) ---------- */
+  .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:17px;padding:0 8px;margin-bottom:30px;}
+  .logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(150deg,#8B7CF6,var(--primary) 55%,var(--secondary));display:flex;align-items:center;justify-content:center;color:#fff;position:relative;box-shadow:0 6px 16px -4px rgba(79,70,229,0.5);flex-shrink:0;}
+  .logo-mark svg.cap-icon{width:16px;height:16px;}
+  .logo-mark svg.sparkle{position:absolute;top:-5px;right:-6px;width:12px;height:12px;}
+  .nav-group{margin-bottom:22px;}
+  .nav-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);padding:0 12px;margin-bottom:8px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;font-size:14px;font-weight:500;color:var(--ink-soft);transition:all 0.2s;margin-bottom:2px;}
+  .nav-item .icon{width:18px;text-align:center;font-size:15px;}
+  .nav-item:hover{background:var(--border);color:var(--ink);}
+  .nav-item.active{background:linear-gradient(135deg,rgba(79,70,229,0.12),rgba(124,58,237,0.1));color:var(--primary);font-weight:700;}
+  .sidebar-bottom{margin-top:auto;}
+  .plan-card{background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;padding:16px;color:#fff;margin-bottom:14px;}
+  .plan-card .icon{font-size:20px;margin-bottom:8px;display:block;}
+  .plan-card h5{font-size:13px;font-family:var(--font-display);margin-bottom:4px;}
+  .plan-card p{font-size:11.5px;opacity:0.85;margin-bottom:12px;line-height:1.4;}
+  .plan-card button{background:#fff;color:var(--primary);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;width:100%;}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;transition:background 0.2s;}
+  .user-chip:hover{background:var(--border);}
+  .user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+  .user-chip .u-name{font-size:13px;font-weight:700;}
+  .user-chip .u-meta{font-size:11px;color:var(--ink-soft);}
+  .user-chip .logout{margin-left:auto;color:var(--ink-soft);font-size:14px;}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:10;background:var(--glass);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:20px;}
+  .search-wrap{flex:1;max-width:420px;position:relative;}
+  .search-wrap .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:14px;}
+  .search-wrap input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13.5px;}
+  .search-wrap input:focus{outline:none;border-color:var(--primary);}
+  .topbar-actions{display:flex;align-items:center;gap:12px;margin-left:auto;}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);position:relative;transition:all 0.2s;font-size:15px;}
+  .icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+  .content{padding:30px 32px 70px;max-width:1100px;}
+
+  .page-head{margin-bottom:22px;}
+  .page-head .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--primary);background:rgba(79,70,229,0.09);padding:6px 12px;border-radius:100px;margin-bottom:12px;}
+  .page-head h1{font-family:var(--font-display);font-size:27px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .page-head p{color:var(--ink-soft);font-size:14px;}
+
+  /* ---------- Generator card ---------- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+  .generator-card{margin-bottom:24px;}
+  .gen-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .gen-select, .gen-input{flex:1;min-width:180px;padding:13px 16px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit;}
+  .gen-select:focus, .gen-input:focus{outline:none;border-color:var(--primary);}
+  .gen-btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:12px;font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;box-shadow:0 8px 20px -6px rgba(79,70,229,0.5);transition:all 0.25s;flex-shrink:0;}
+  .gen-btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px -6px rgba(79,70,229,0.6);}
+  .gen-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+  .suggest-label{font-size:12px;color:var(--ink-soft);font-weight:600;margin:14px 0 8px;}
+  .suggest-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .suggest-chip{font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:100px;border:1px solid var(--border);background:var(--bg);transition:all 0.2s;}
+  .suggest-chip:hover{border-color:var(--primary);color:var(--primary);}
+
+  /* ---------- Loading state ---------- */
+  .loading-card{display:none;text-align:center;padding:50px 24px;margin-bottom:24px;}
+  .loading-card.show{display:block;}
+  .loading-ring{width:64px;height:64px;border-radius:50%;border:4px solid var(--border);border-top-color:var(--primary);margin:0 auto 20px;animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-card h3{font-family:var(--font-display);font-size:17px;margin-bottom:6px;}
+  .loading-card p{color:var(--ink-soft);font-size:13px;}
+  .loading-log{margin-top:20px;display:inline-flex;flex-direction:column;gap:8px;text-align:left;}
+  .loading-log div{font-size:12.5px;color:var(--border);transition:color 0.3s;}
+  .loading-log div.done{color:var(--ink-soft);}
+  .loading-log div .icon{width:16px;display:inline-block;color:var(--border);}
+  .loading-log div.done .icon{color:var(--success);}
+  .loading-error{display:none;margin-top:18px;padding:12px 16px;border-radius:12px;background:rgba(239,68,68,0.08);color:var(--danger);font-size:12.5px;font-weight:600;text-align:left;}
+  .loading-error.show{display:block;}
+
+  /* ---------- Lesson result ---------- */
+  .lesson{display:none;}
+  .lesson.show{display:block;}
+  .lesson-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .lesson-title h2{font-family:var(--font-display);font-size:22px;letter-spacing:-0.01em;margin-bottom:8px;}
+  .lesson-tags{display:flex;flex-wrap:wrap;gap:8px;}
+  .lesson-tag{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:100px;background:var(--bg);border:1px solid var(--border);color:var(--ink-soft);}
+  .lesson-tag.primary{background:rgba(79,70,229,0.1);color:var(--primary);border-color:transparent;}
+  .lesson-actions{display:flex;gap:10px;flex-shrink:0;}
+  .action-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 15px;border-radius:10px;border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--ink-soft);transition:all 0.2s;}
+  .action-btn:hover{border-color:var(--primary);color:var(--primary);}
+  .action-btn.saved{background:rgba(79,70,229,0.1);color:var(--primary);border-color:transparent;}
+
+  /* ---------- Format tabs ---------- */
+  .format-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:14px;}
+  .format-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:700;color:var(--ink-soft);transition:all 0.2s;}
+  .format-tab:hover{background:var(--bg);}
+  .format-tab.active{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;}
+  .format-tab .rec-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+  .format-panel{display:none;}
+  .format-panel.active{display:block;}
+
+  .lesson-body{line-height:1.75;font-size:14.5px;color:var(--ink);}
+  .lesson-body p{margin-bottom:14px;}
+  .lesson-body h4{font-family:var(--font-display);font-size:15px;margin:18px 0 8px;}
+  .lesson-body ul, .lesson-body ol{margin:0 0 14px 20px;}
+  .lesson-body li{margin-bottom:7px;}
+  .step-list{display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+  .step-item{display:flex;gap:14px;}
+  .step-num{width:28px;height:28px;border-radius:9px;background:rgba(79,70,229,0.1);color:var(--primary);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step-text{flex:1;padding-top:2px;}
+  .step-text b{font-weight:700;}
+
+  .visual-box{border:1.5px dashed var(--border);border-radius:16px;padding:30px;text-align:center;background:linear-gradient(150deg,rgba(79,70,229,0.05),rgba(6,182,212,0.05));margin-bottom:16px;}
+  .visual-box .big-icon{font-size:44px;margin-bottom:10px;}
+  .visual-box h4{font-family:var(--font-display);font-size:15px;margin-bottom:6px;}
+  .visual-box p{color:var(--ink-soft);font-size:13px;max-width:420px;margin:0 auto;}
+
+  .story-box{background:linear-gradient(150deg,rgba(245,158,11,0.06),rgba(124,58,237,0.05));border-radius:16px;padding:22px;border-left:3px solid var(--warning);}
+
+  .practice-item{border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+  .practice-item h5{font-size:13.5px;font-weight:700;margin-bottom:8px;}
+  .reveal-btn{font-size:12px;font-weight:700;color:var(--primary);}
+  .reveal-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:13px;color:var(--ink-soft);}
+  .reveal-answer.show{display:block;}
+
+  .interactive-blank{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
+  .interactive-blank input{border:none;border-bottom:2px solid var(--primary);background:transparent;font-weight:700;color:var(--primary);font-size:14px;width:130px;text-align:center;font-family:inherit;padding:2px 4px;}
+  .interactive-blank input:focus{outline:none;}
+  .check-blanks-btn{margin-top:6px;}
+
+  /* ---------- Quiz ---------- */
+  .quiz-card{margin-top:24px;}
+  .quiz-q{margin-bottom:22px;}
+  .quiz-q h5{font-size:14px;font-weight:700;margin-bottom:12px;}
+  .quiz-opts{display:flex;flex-direction:column;gap:8px;}
+  .quiz-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:13.5px;}
+  .quiz-opt:hover{border-color:var(--primary);}
+  .quiz-opt.selected{border-color:var(--primary);background:rgba(79,70,229,0.06);}
+  .quiz-opt.correct{border-color:var(--success);background:rgba(34,197,94,0.08);}
+  .quiz-opt.wrong{border-color:var(--danger);background:rgba(239,68,68,0.08);}
+  .quiz-opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;}
+  .quiz-opt.selected .radio{border-color:var(--primary);background:var(--primary);color:#fff;}
+  .quiz-opt.correct .radio{border-color:var(--success);background:var(--success);color:#fff;}
+  .quiz-opt.wrong .radio{border-color:var(--danger);background:var(--danger);color:#fff;}
+  .quiz-submit-btn{margin-top:6px;}
+  .quiz-result{display:none;text-align:center;padding:24px;border-radius:16px;background:linear-gradient(150deg,rgba(34,197,94,0.08),rgba(6,182,212,0.06));margin-top:10px;}
+  .quiz-result.show{display:block;}
+  .quiz-result .score{font-family:var(--font-display);font-size:30px;color:var(--success);margin-bottom:6px;}
+
+  /* ---------- Ask AI ---------- */
+  .ask-card{margin-top:24px;}
+  .ask-input-row{display:flex;gap:10px;margin-top:14px;}
+  .ask-input-row input{flex:1;padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:13.5px;font-family:inherit;}
+  .ask-input-row input:focus{outline:none;border-color:var(--primary);}
+  .ask-log{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+  .ask-bubble{max-width:88%;padding:12px 15px;border-radius:14px;font-size:13.5px;line-height:1.6;}
+  .ask-bubble.user{align-self:flex-end;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-bottom-right-radius:4px;}
+  .ask-bubble.ai{align-self:flex-start;background:var(--bg);border:1px solid var(--border);border-bottom-left-radius:4px;}
+  .ask-bubble.ai.thinking{color:var(--ink-soft);font-style:italic;}
+  .ask-log{display:flex;}
+  .ask-log-wrap{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+  .ask-chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+  .complete-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:26px;padding:18px 22px;border-radius:16px;background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(6,182,212,0.06));}
+  .complete-bar p{font-size:13px;color:var(--ink-soft);}
+  .complete-btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border-radius:11px;font-weight:700;font-size:13.5px;background:linear-gradient(135deg,var(--success),#16A34A);color:#fff;transition:all 0.2s;}
+  .complete-btn:hover{transform:translateY(-2px);}
+  .complete-btn.done{background:var(--border);color:var(--ink-soft);}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);padding:14px 18px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;transform:translateY(120%);opacity:0;transition:all 0.35s cubic-bezier(.2,.8,.2,1);z-index:100;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.error{border-color:var(--danger);}
+
+  @media (max-width:820px){
+    .sidebar{display:none;}
+    .content{padding:24px 18px 50px;}
+    .topbar{padding:14px 18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="learnmate-landing.html" class="logo"><span class="logo-mark"><svg class="cap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5L2.5 8.2 12 12.9l7.5-3.7V15h1.5V8.2L12 3.5z" fill="white"/><path d="M6 10.7v3.4c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2v-3.4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5c.15 1.6.6 2.35 2.3 2.6-1.7.25-2.15 1-2.3 2.6-.15-1.6-.6-2.35-2.3-2.6 1.7-.25 2.15-1 2.3-2.6z" fill="white"/></svg></span>LearnMate AI</a>
+
+    <div class="nav-group">
+      <a href="learnmate-dashboard.html" class="nav-item"><span class="icon">🏠</span> Dashboard</a>
+      <a href="learnmate-canvas.html" class="nav-item active"><span class="icon">🪄</span> AI Learning Canvas</a>
+      <div class="nav-item"><span class="icon">📅</span> Study Planner</div>
+      <div class="nav-item"><span class="icon">❓</span> Adaptive Quizzes</div>
+      <div class="nav-item"><span class="icon">🗂️</span> Smart Revision</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Insights</div>
+      <div class="nav-item"><span class="icon">📈</span> Analytics</div>
+      <div class="nav-item"><span class="icon">🧬</span> Learning DNA</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Account</div>
+      <div class="nav-item"><span class="icon">⚙️</span> Settings</div>
+      <div class="nav-item"><span class="icon">ℹ️</span> Help &amp; Support</div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="plan-card">
+        <span class="icon">🪄</span>
+        <h5>Stuck on a topic?</h5>
+        <p>Type anything and the Canvas builds a lesson matched to how you learn.</p>
+        <button onclick="document.getElementById('topicInput').focus()">Try it now</button>
+      </div>
+      <a href="learnmate-dashboard.html" class="user-chip">
+        <div class="user-avatar" id="userInitial">S</div>
+        <div>
+          <div class="u-name" id="userName">Student</div>
+          <div class="u-meta" id="userMeta">Class — · —</div>
+        </div>
+        <span class="icon logout">🚪</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Ask anything — Photosynthesis, Newton's laws, Trigonometry...">
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle icon-btn" id="themeToggle" aria-label="Toggle dark mode"><span class="icon">🌙</span></button>
+        <button class="icon-btn"><span class="icon">🔔</span></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div class="eyebrow"><span class="icon">🪄</span> AI Learning Canvas</div>
+        <h1>What do you want to understand today?</h1>
+        <p id="pageSub">Type any topic — the lesson is generated live by AI, matched to your Learning DNA, not a fixed textbook page.</p>
+      </div>
+
+      <!-- Generator -->
+      <div class="card generator-card">
+        <div class="gen-row">
+          <select class="gen-select" id="subjectSelect"></select>
+          <input type="text" class="gen-input" id="topicInput" placeholder="e.g. Quadratic Equations, Newton's Laws, Figures of Speech...">
+          <button class="gen-btn" id="generateBtn"><span class="icon">🪄</span> Generate lesson</button>
+        </div>
+        <div class="suggest-label">Suggested for you, based on your weakest subject:</div>
+        <div class="suggest-chips" id="suggestChips"></div>
+      </div>
+
+      <!-- Loading -->
+      <div class="card loading-card" id="loadingCard">
+        <div class="loading-ring"></div>
+        <h3 id="loadingTitle">Building your lesson...</h3>
+        <p>Matching this to your Learning DNA</p>
+        <div class="loading-log">
+          <div id="log1"><span class="icon">◉</span> Reading topic &amp; subject</div>
+          <div id="log2"><span class="icon">◉</span> Matching your learning style</div>
+          <div id="log3"><span class="icon">◉</span> Setting difficulty from your confidence level</div>
+          <div id="log4"><span class="icon">◉</span> Asking Gemini to write your lesson</div>
+        </div>
+        <div class="loading-error" id="loadingError"></div>
+      </div>
+
+      <!-- Lesson -->
+      <div class="lesson" id="lesson">
+        <div class="lesson-head">
+          <div class="lesson-title">
+            <h2 id="lessonTitle">Topic title</h2>
+            <div class="lesson-tags" id="lessonTags"></div>
+          </div>
+          <div class="lesson-actions">
+            <button class="action-btn" id="saveBtn"><span class="icon">🔖</span> Save to revision</button>
+            <button class="action-btn" id="regenBtn"><span class="icon">🔄</span> Regenerate</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="format-tabs" id="formatTabs"></div>
+
+          <div class="format-panel active" id="panel-explanation">
+            <div class="lesson-body">
+              <h4>Explanation</h4>
+              <div class="step-list" id="explanationSteps"></div>
+            </div>
+          </div>
+
+          <div class="format-panel" id="panel-visual">
+            <div class="visual-box">
+              <div class="big-icon" id="visualIcon">📊</div>
+              <h4 id="visualTitle">Visual walkthrough</h4>
+              <p id="visualCaption">A diagram would render here in the full product, generated to match this exact topic.</p>
+            </div>
+            <div class="lesson-body" id="visualNotes"></div>
+          </div>
+
+          <div class="format-panel" id="panel-story">
+            <div class="story-box">
+              <div class="lesson-body" id="storyText"></div>
+            </div>
+          </div>
+
+          <div class="format-panel" id="panel-practice">
+            <div class="lesson-body">
+              <h4>Practice problems</h4>
+              <div id="practiceList"></div>
+            </div>
+          </div>
+
+          <div class="format-panel" id="panel-interactive">
+            <div class="lesson-body">
+              <h4>Fill in the blanks</h4>
+              <p style="color:var(--ink-soft);font-size:13px;margin-bottom:14px;">Type the missing word in each box, then check your answers.</p>
+            </div>
+            <div id="interactiveList"></div>
+            <button class="gen-btn check-blanks-btn" id="checkBlanksBtn">Check answers</button>
+          </div>
+        </div>
+
+        <!-- Quick check quiz -->
+        <div class="card quiz-card">
+          <div class="card-head" style="display:flex;align-items:center;gap:9px;margin-bottom:18px;">
+            <h3 style="font-family:var(--font-display);font-size:16.5px;display:flex;align-items:center;gap:9px;"><span class="icon" style="color:var(--primary);">✅</span> Quick check</h3>
+          </div>
+          <div id="quizQuestions"></div>
+          <button class="gen-btn quiz-submit-btn" id="quizSubmitBtn">Submit answers</button>
+          <div class="quiz-result" id="quizResult">
+            <div class="score" id="quizScoreText">0/3</div>
+            <p id="quizResultMsg">Keep going — you're getting there.</p>
+          </div>
+        </div>
+
+        <!-- Ask AI -->
+        <div class="card ask-card">
+          <h3 style="font-family:var(--font-display);font-size:16.5px;display:flex;align-items:center;gap:9px;"><span class="icon" style="color:var(--primary);">💬</span> Ask a follow-up question</h3>
+          <div class="ask-log-wrap" id="askLog"></div>
+          <div class="ask-chip-row" id="askChips"></div>
+          <div class="ask-input-row">
+            <input type="text" id="askInput" placeholder="e.g. Can you give me one more example?">
+            <button class="gen-btn" id="askBtn"><span class="icon">➤</span></button>
+          </div>
+        </div>
+
+        <div class="complete-bar">
+          <p id="completeText">Finish the quick check above, then mark this lesson complete to update your progress.</p>
+          <button class="complete-btn" id="completeBtn"><span class="icon">✓</span> Mark lesson complete</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="icon">✅</span><span id="toastText">Nice work!</span></div>
+
+<script>
+  // ==========================================================
+  // BACKEND CONNECTION — the live Node/Express + Gemini server.
+  // Run it locally (see learnmate-server/README.md) before using this page.
+  // If you deploy the backend elsewhere, change this URL.
+  // ==========================================================
+  const API_BASE = 'http://localhost:3001';
+
+  // ---------- Theme ----------
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  toggle.addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    toggle.querySelector('.icon').textContent = isDark ? '🌙' : '☀️';
+  });
+
+  // ---------- Learning DNA ----------
+  let dna = null;
+  try{ dna = JSON.parse(localStorage.getItem('learnmate_dna')); }catch(e){}
+  const fallback = {
+    classLevel:'10', board:'CBSE', subjects:{ Maths:0, Science:0, English:0, "Social Science":0 },
+    style:'Visual Learner', weakSubject:'Maths', goals:['Score higher in exams'], language:'English', time:'30 min'
+  };
+  const d = dna || fallback;
+  document.getElementById('userMeta').textContent = `Class ${d.classLevel || '—'} · ${d.board || '—'}`;
+
+  // ---------- Shared progress store (same schema the dashboard reads) ----------
+  const PROGRESS_KEY = 'learnmate_progress';
+  let progress = null;
+  try{ progress = JSON.parse(localStorage.getItem(PROGRESS_KEY)); }catch(e){}
+  if(!progress){
+    const subjectProgress = {};
+    Object.keys(d.subjects).forEach(s => subjectProgress[s] = 0);
+    progress = { streak:0, bestStreak:0, lessonsCompleted:0, quizScores:[], subjectProgress, planDone:{}, activity:[] };
+  }
+  function saveProgress(){ localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress)); }
+
+  const SAVED_KEY = 'learnmate_saved_lessons';
+  function getSaved(){ try{ return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; }catch(e){ return []; } }
+  function setSaved(list){ localStorage.setItem(SAVED_KEY, JSON.stringify(list)); }
+
+  // ---------- Subject dropdown + suggestions ----------
+  const subjectSelect = document.getElementById('subjectSelect');
+  Object.keys(d.subjects).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    if(s === d.weakSubject) opt.selected = true;
+    subjectSelect.appendChild(opt);
+  });
+
+  const topicsBySubject = {
+    Maths: ['Quadratic Equations','Linear Equations','Trigonometry Basics','Probability'],
+    Science: ["Newton's Laws of Motion", 'Photosynthesis', 'The Periodic Table', 'Electric Circuits'],
+    English: ['Figures of Speech', 'Tenses', 'Active & Passive Voice', 'Comprehension Skills'],
+    "Social Science": ['The French Revolution', 'Indian Constitution', 'Climate & Vegetation', 'Resources & Development']
+  };
+
+  function renderSuggestions(){
+    const chipsEl = document.getElementById('suggestChips');
+    chipsEl.innerHTML = '';
+    const list = topicsBySubject[d.weakSubject] || topicsBySubject.Maths;
+    list.forEach(t => {
+      const chip = document.createElement('button');
+      chip.className = 'suggest-chip';
+      chip.textContent = t;
+      chip.addEventListener('click', () => {
+        subjectSelect.value = d.weakSubject;
+        document.getElementById('topicInput').value = t;
+        generateLesson(d.weakSubject, t);
+      });
+      chipsEl.appendChild(chip);
+    });
+  }
+  renderSuggestions();
+
+  // ---------- Learning style → recommended tab ----------
+  const styleFormatMap = {
+    'Visual Learner': 'visual', 'Reading/Writing Learner': 'explanation', 'Story-Based Learner': 'story',
+    'Practice-Based Learner': 'practice', 'Interactive Learner': 'interactive'
+  };
+  function recommendedFormat(){ return styleFormatMap[d.style] || 'explanation'; }
+
+  // ---------- Generation flow (calls the real backend / Gemini) ----------
+  let currentLesson = null;
+  let currentTopic = '';
+  let generationController = null;
+
+  async function generateLesson(subject, topic){
+    if(!topic || !topic.trim()) return;
+    currentTopic = topic.trim();
+    subjectSelect.value = subject;
+    document.getElementById('topicInput').value = currentTopic;
+
+    document.getElementById('lesson').classList.remove('show');
+    const loadingCard = document.getElementById('loadingCard');
+    const errorBox = document.getElementById('loadingError');
+    errorBox.classList.remove('show');
+    errorBox.textContent = '';
+    loadingCard.classList.add('show');
+    document.getElementById('loadingTitle').textContent = `Building your lesson on "${currentTopic}"...`;
+    ['log1','log2','log3','log4'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('done');
+      el.querySelector('.icon').textContent = '◉';
+    });
+    document.getElementById('generateBtn').disabled = true;
+
+    // Step through the log purely for perceived progress while the real request is in flight
+    const stepTimers = ['log1','log2','log3'].map((id,i) => setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.add('done');
+      el.querySelector('.icon').textContent = '✅';
+    }, 450*(i+1)));
+
+    if(generationController) generationController.abort();
+    generationController = new AbortController();
+
+    const confidence = (d.subjects && d.subjects[subject]) || 0;
+
+    try{
+      const res = await fetch(`${API_BASE}/api/generate-lesson`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: generationController.signal,
+        body: JSON.stringify({
+          subject, topic: currentTopic,
+          learningStyle: d.style, confidence,
+          classLevel: d.classLevel, board: d.board, language: d.language
+        })
+      });
+
+      document.getElementById('log4').classList.add('done');
+      document.getElementById('log4').querySelector('.icon').textContent = '✅';
+
+      if(!res.ok){
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || errBody.error || `Server responded with ${res.status}`);
+      }
+      const data = await res.json();
+      currentLesson = data;
+      renderLesson(currentTopic, data);
+      loadingCard.classList.remove('show');
+      document.getElementById('lesson').classList.add('show');
+      document.getElementById('lesson').scrollIntoView({behavior:'smooth', block:'start'});
+    } catch(err){
+      if(err.name === 'AbortError') return;
+      console.error('Lesson generation failed:', err);
+      errorBox.textContent = `⚠️ Couldn't reach the AI backend (${err.message}). Make sure the LearnMate server is running on ${API_BASE} with a valid GEMINI_API_KEY, then try again.`;
+      errorBox.classList.add('show');
+      document.getElementById('loadingTitle').textContent = 'Generation failed';
+    } finally {
+      stepTimers.forEach(clearTimeout);
+      document.getElementById('generateBtn').disabled = false;
+    }
+  }
+
+  const formatIcons = { explanation:'📖', visual:'📊', story:'📜', practice:'✏️', interactive:'🎮' };
+  const formatLabels = { explanation:'Explanation', visual:'Visual', story:'Story mode', practice:'Practice', interactive:'Interactive' };
+
+  function renderLesson(topic, data){
+    document.getElementById('lessonTitle').textContent = topic;
+    const tagsEl = document.getElementById('lessonTags');
+    const confidence = (d.subjects && d.subjects[data.subject]) || 0;
+    const difficulty = confidence >= 70 ? 'Advanced' : confidence >= 40 ? 'Building up' : 'Foundational';
+    tagsEl.innerHTML = '';
+    [ [data.subject,true], [difficulty,false], [`${d.time || '30 min'} read`,false], [`Matched to: ${d.style || 'Balanced Learner'}`,false] ]
+      .forEach(([t,primary]) => { const s = document.createElement('span'); s.className = 'lesson-tag' + (primary?' primary':''); s.textContent = t; tagsEl.appendChild(s); });
+
+    // Format tabs
+    const rec = recommendedFormat();
+    const tabsEl = document.getElementById('formatTabs');
+    tabsEl.innerHTML = '';
+    Object.keys(formatIcons).forEach(key => {
+      const tab = document.createElement('button');
+      tab.className = 'format-tab' + (key === rec ? ' active' : '');
+      tab.dataset.format = key;
+      tab.innerHTML = `<span class="icon">${formatIcons[key]}</span> ${formatLabels[key]}${key===rec ? ' <span class="rec-dot" title="Matched to your style"></span>' : ''}`;
+      tab.addEventListener('click', () => switchFormat(key));
+      tabsEl.appendChild(tab);
+    });
+    switchFormat(rec);
+
+    // Explanation
+    const stepsEl = document.getElementById('explanationSteps');
+    stepsEl.innerHTML = '';
+    data.steps.forEach((s,i) => {
+      const row = document.createElement('div');
+      row.className = 'step-item';
+      row.innerHTML = `<div class="step-num">${i+1}</div><div class="step-text">${s}</div>`;
+      stepsEl.appendChild(row);
+    });
+
+    // Visual
+    document.getElementById('visualIcon').textContent = data.icon || '📊';
+    document.getElementById('visualTitle').textContent = `${topic} — visual walkthrough`;
+    document.getElementById('visualCaption').textContent = data.visualCaption;
+    document.getElementById('visualNotes').innerHTML = data.visualNotes;
+
+    // Story
+    document.getElementById('storyText').innerHTML = data.story;
+
+    // Practice
+    const pEl = document.getElementById('practiceList');
+    pEl.innerHTML = '';
+    data.practice.forEach((p,i) => {
+      const item = document.createElement('div');
+      item.className = 'practice-item';
+      item.innerHTML = `<h5>Q${i+1}. ${p.q}</h5><button class="reveal-btn">Show answer</button><div class="reveal-answer">${p.a}</div>`;
+      item.querySelector('.reveal-btn').addEventListener('click', (e) => {
+        const ans = item.querySelector('.reveal-answer');
+        ans.classList.toggle('show');
+        e.target.textContent = ans.classList.contains('show') ? 'Hide answer' : 'Show answer';
+      });
+      pEl.appendChild(item);
+    });
+
+    // Interactive fill-in-the-blank
+    const iEl = document.getElementById('interactiveList');
+    iEl.innerHTML = '';
+    data.blanks.forEach((b,i) => {
+      const row = document.createElement('div');
+      row.className = 'interactive-blank';
+      row.innerHTML = `${b.before}<input type="text" data-answer="${b.answer.toLowerCase()}" data-idx="${i}" placeholder="type here">${b.after}`;
+      iEl.appendChild(row);
+    });
+
+    // Quiz
+    renderQuiz(data.quiz, data.subject);
+
+    // Ask AI reset
+    document.getElementById('askLog').innerHTML = '';
+    const chipsEl = document.getElementById('askChips');
+    chipsEl.innerHTML = '';
+    [`Give me one more example`, `Why does this matter?`, `Explain it more simply`].forEach(q => {
+      const chip = document.createElement('button');
+      chip.className = 'suggest-chip';
+      chip.textContent = q;
+      chip.addEventListener('click', () => askQuestion(q));
+      chipsEl.appendChild(chip);
+    });
+
+    // Save button state
+    const saved = getSaved();
+    const isSaved = saved.some(s => s.topic === topic);
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.classList.toggle('saved', isSaved);
+    saveBtn.innerHTML = isSaved ? '<span class="icon">✅</span> Saved to revision' : '<span class="icon">🔖</span> Save to revision';
+
+    // Complete button state
+    lessonKey = `${data.subject}::${topic}`;
+    const doneAlready = (progress.completedLessons || []).includes(lessonKey);
+    updateCompleteBtn(doneAlready);
+  }
+
+  function switchFormat(key){
+    document.querySelectorAll('.format-tab').forEach(t => t.classList.toggle('active', t.dataset.format === key));
+    document.querySelectorAll('.format-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + key).classList.add('active');
+  }
+
+  document.getElementById('checkBlanksBtn').addEventListener('click', () => {
+    document.querySelectorAll('#interactiveList input').forEach(inp => {
+      const correct = inp.value.trim().toLowerCase() === inp.dataset.answer;
+      inp.style.borderBottomColor = correct ? 'var(--success)' : 'var(--danger)';
+      inp.style.color = correct ? 'var(--success)' : 'var(--danger)';
+    });
+  });
+
+  // ---------- Quiz ----------
+  let quizAnswers = {};
+  function renderQuiz(questions, subject){
+    quizAnswers = {};
+    const el = document.getElementById('quizQuestions');
+    el.innerHTML = '';
+    document.getElementById('quizResult').classList.remove('show');
+    document.getElementById('quizSubmitBtn').style.display = 'inline-flex';
+    questions.forEach((q,qi) => {
+      const block = document.createElement('div');
+      block.className = 'quiz-q';
+      const opts = q.opts.map((o,oi) => `<div class="quiz-opt" data-q="${qi}" data-o="${oi}"><span class="radio"></span>${o}</div>`).join('');
+      block.innerHTML = `<h5>${qi+1}. ${q.q}</h5><div class="quiz-opts">${opts}</div>`;
+      el.appendChild(block);
+    });
+    document.querySelectorAll('.quiz-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const qi = opt.dataset.q;
+        document.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        quizAnswers[qi] = parseInt(opt.dataset.o);
+      });
+    });
+
+    document.getElementById('quizSubmitBtn').onclick = () => {
+      let correctCount = 0;
+      questions.forEach((q, qi) => {
+        document.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(opt => {
+          const oi = parseInt(opt.dataset.o);
+          if(oi === q.correct) opt.classList.add('correct');
+          else if(quizAnswers[qi] === oi) opt.classList.add('wrong');
+        });
+        if(quizAnswers[qi] === q.correct) correctCount++;
+      });
+      const pct = Math.round((correctCount/questions.length)*100);
+      document.getElementById('quizScoreText').textContent = `${correctCount}/${questions.length}`;
+      document.getElementById('quizResultMsg').textContent = pct >= 80 ? "Excellent — you've really got this." : pct >= 50 ? "Solid effort — a quick review will lock it in." : "No worries — revisit the explanation tab and try again.";
+      document.getElementById('quizResult').classList.add('show');
+      document.getElementById('quizSubmitBtn').style.display = 'none';
+
+      progress.quizScores.push(pct);
+      saveProgress();
+      document.getElementById('completeText').textContent = 'Great — quick check done. Mark this lesson complete to save your progress.';
+    };
+  }
+
+  // ---------- Ask AI (real backend call, no canned replies) ----------
+  async function askQuestion(text){
+    const logEl = document.getElementById('askLog');
+    const userBubble = document.createElement('div');
+    userBubble.className = 'ask-bubble user';
+    userBubble.textContent = text;
+    logEl.appendChild(userBubble);
+
+    const thinkingBubble = document.createElement('div');
+    thinkingBubble.className = 'ask-bubble ai thinking';
+    thinkingBubble.textContent = 'Thinking...';
+    logEl.appendChild(thinkingBubble);
+    logEl.scrollTop = logEl.scrollHeight;
+
+    try{
+      const res = await fetch(`${API_BASE}/api/ask-question`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: currentTopic,
+          subject: currentLesson ? currentLesson.subject : subjectSelect.value,
+          question: text,
+          learningStyle: d.style
+        })
+      });
+      if(!res.ok){
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || errBody.error || `Server responded with ${res.status}`);
+      }
+      const data = await res.json();
+      thinkingBubble.classList.remove('thinking');
+      thinkingBubble.textContent = data.answer;
+    } catch(err){
+      console.error('Ask AI failed:', err);
+      thinkingBubble.classList.remove('thinking');
+      thinkingBubble.textContent = `⚠️ Couldn't reach the AI backend (${err.message}). Make sure the LearnMate server is running on ${API_BASE}.`;
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  document.getElementById('askBtn').addEventListener('click', () => {
+    const inp = document.getElementById('askInput');
+    if(inp.value.trim()){ askQuestion(inp.value.trim()); inp.value = ''; }
+  });
+  document.getElementById('askInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ document.getElementById('askBtn').click(); }
+  });
+
+  // ---------- Save to revision ----------
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    if(!currentLesson) return;
+    let saved = getSaved();
+    const exists = saved.some(s => s.topic === currentTopic);
+    if(exists){
+      saved = saved.filter(s => s.topic !== currentTopic);
+    } else {
+      saved.push({ topic: currentTopic, subject: currentLesson.subject, savedAt: new Date().toISOString() });
+    }
+    setSaved(saved);
+    const btn = document.getElementById('saveBtn');
+    btn.classList.toggle('saved', !exists);
+    btn.innerHTML = !exists ? '<span class="icon">✅</span> Saved to revision' : '<span class="icon">🔖</span> Save to revision';
+    showToast(!exists ? 'Saved to your revision list.' : 'Removed from revision list.');
+  });
+
+  // ---------- Regenerate ----------
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    if(currentLesson) generateLesson(currentLesson.subject, currentTopic);
+  });
+
+  // ---------- Mark complete (feeds the shared progress store the dashboard reads) ----------
+  let lessonKey = '';
+  function updateCompleteBtn(done){
+    const btn = document.getElementById('completeBtn');
+    btn.classList.toggle('done', done);
+    btn.innerHTML = done ? '<span class="icon">✅</span> Lesson completed' : '<span class="icon">✓</span> Mark lesson complete';
+  }
+  document.getElementById('completeBtn').addEventListener('click', () => {
+    if(!currentLesson) return;
+    if(!progress.completedLessons) progress.completedLessons = [];
+    if(progress.completedLessons.includes(lessonKey)){
+      showToast('Already marked complete for this lesson.');
+      return;
+    }
+    progress.completedLessons.push(lessonKey);
+    progress.lessonsCompleted += 1;
+    if(progress.streak === 0) progress.streak = 1;
+    if(progress.streak > progress.bestStreak) progress.bestStreak = progress.streak;
+    const subj = currentLesson.subject;
+    if(progress.subjectProgress.hasOwnProperty(subj)){
+      progress.subjectProgress[subj] = Math.min(100, progress.subjectProgress[subj] + 25);
+    }
+    progress.activity.unshift({ icon:'🪄', text:`Completed lesson: ${currentTopic}`, time: new Date().toISOString() });
+    progress.activity = progress.activity.slice(0,6);
+    saveProgress();
+    updateCompleteBtn(true);
+    showToast('Lesson marked complete — your dashboard just updated.');
+  });
+
+  // ---------- Toast ----------
+  function showToast(text, isError){
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    toast.classList.toggle('error', !!isError);
+    toast.querySelector('.icon').textContent = isError ? '⚠️' : '✅';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  // ---------- Generate button ----------
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    generateLesson(subjectSelect.value, document.getElementById('topicInput').value);
+  });
+  document.getElementById('topicInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ document.getElementById('generateBtn').click(); }
+  });
+
+  // ---------- Backend health check on load ----------
+  (async () => {
+    try{
+      const res = await fetch(`${API_BASE}/api/health`);
+      const data = await res.json();
+      if(!data.keyConfigured){
+        showToast('Backend is running but GEMINI_API_KEY is missing — add it to learnmate-server/.env', true);
+      }
+    } catch(e){
+      showToast(`AI backend not reachable at ${API_BASE}. Start the server (see learnmate-server/README.md) to generate lessons.`, true);
+    }
+  })();
+
+  // ---------- Auto-run from query params (e.g. from dashboard "Continue learning") ----------
+  const params = new URLSearchParams(window.location.search);
+  const qSubject = params.get('subject');
+  const qTopic = params.get('topic');
+  if(qTopic){
+    generateLesson(qSubject || subjectSelect.value, qTopic);
+  }
+</script>
+</body>
+</html>
