@@ -1,1 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LearnMate AI — Learning that adapts to you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --primary:#4F46E5;
+    --primary-light:#6366F1;
+    --secondary:#7C3AED;
+    --accent:#06B6D4;
+    --success:#22C55E;
+    --warning:#F59E0B;
+    --bg:#F7F8FC;
+    --surface:#FFFFFF;
+    --ink:#12131A;
+    --ink-soft:#5B5F73;
+    --border:rgba(18,19,26,0.08);
+    --glass:rgba(255,255,255,0.6);
+    --radius:20px;
+    --shadow:0 10px 40px -12px rgba(79,70,229,0.18);
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#0A0D1A;
+    --surface:#12162A;
+    --ink:#F2F3F8;
+    --ink-soft:#9498B0;
+    --border:rgba(255,255,255,0.08);
+    --glass:rgba(18,22,42,0.6);
+    --shadow:0 10px 45px -12px rgba(124,58,237,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+  body{
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--ink);
+    overflow-x:hidden;
+    transition:background 0.4s ease, color 0.4s ease;
+  }
+  a{text-decoration:none;color:inherit;}
+  img{max-width:100%;display:block;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  ::selection{background:var(--primary);color:#fff;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;}
 
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px;}
+
+  /* ---------- Ambient blobs ---------- */
+  .blob-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:0.35;transition:transform 0.6s cubic-bezier(.2,.8,.2,1);}
+  .blob-1{width:520px;height:520px;background:radial-gradient(circle,var(--primary),transparent 70%);top:-180px;left:-120px;}
+  .blob-2{width:420px;height:420px;background:radial-gradient(circle,var(--accent),transparent 70%);top:280px;right:-140px;}
+  .blob-3{width:380px;height:380px;background:radial-gradient(circle,var(--secondary),transparent 70%);bottom:-160px;left:35%;}
+  [data-theme="dark"] .blob{opacity:0.28;}
+
+  /* ---------- Navbar ---------- */
+  header{
+    position:sticky;top:0;z-index:100;
+    background:var(--glass);
+    backdrop-filter:blur(16px) saturate(160%);
+    -webkit-backdrop-filter:blur(16px) saturate(160%);
+    border-bottom:1px solid var(--border);
+  }
+  nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;max-width:1240px;margin:0 auto;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-0.02em;}
+  .logo-mark{
+    width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(150deg,#8B7CF6,var(--primary) 55%,var(--secondary));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;
+    box-shadow:0 6px 16px -4px rgba(79,70,229,0.5);position:relative;
+  }
+  .logo-mark svg.cap-icon{width:17px;height:17px;}
+  .logo-mark svg.sparkle{position:absolute;top:-5px;right:-6px;width:13px;height:13px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
+  .nav-links{display:flex;gap:34px;align-items:center;}
+  .nav-links a{font-size:14.5px;font-weight:500;color:var(--ink-soft);transition:color 0.25s;position:relative;}
+  .nav-links a:hover{color:var(--ink);}
+  .nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--primary);transition:width 0.25s;}
+  .nav-links a:hover::after{width:100%;}
+  .nav-actions{display:flex;align-items:center;gap:14px;}
+  .theme-toggle{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+    transition:all 0.25s;
+  }
+  .theme-toggle:hover{border-color:var(--primary);color:var(--primary);transform:rotate(15deg);}
+  .btn{
+    font-weight:600;font-size:14.5px;padding:11px 22px;border-radius:12px;
+    display:inline-flex;align-items:center;gap:8px;transition:all 0.25s cubic-bezier(.2,.8,.2,1);
+  }
+  .btn-ghost{color:var(--ink);}
+  .btn-ghost:hover{background:var(--border);}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+    color:#fff;box-shadow:0 8px 20px -6px rgba(79,70,229,0.55);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 26px -6px rgba(79,70,229,0.65);}
+  .menu-toggle{display:none;font-size:20px;color:var(--ink);}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;z-index:1;padding:96px 0 60px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;font-weight:600;color:var(--primary);
+    background:rgba(79,70,229,0.09);padding:7px 14px;border-radius:100px;margin-bottom:22px;
+    border:1px solid rgba(79,70,229,0.18);
+  }
+  .eyebrow i{font-size:11px;}
+  h1{
+    font-family:var(--font-display);
+    font-size:56px;line-height:1.05;letter-spacing:-0.025em;font-weight:700;
+    margin-bottom:22px;
+  }
+  h1 .grad{
+    background:linear-gradient(120deg,var(--primary),var(--secondary) 55%,var(--accent));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero-sub{font-size:17.5px;line-height:1.65;color:var(--ink-soft);max-width:490px;margin-bottom:34px;}
+  .hero-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:38px;}
+  .btn-lg{padding:15px 28px;font-size:15.5px;border-radius:14px;}
+  .hero-proof{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:13.5px;}
+  .hero-proof i{color:var(--primary);font-size:14px;}
+
+  /* ---- Signature: Learning Canvas demo ---- */
+  .canvas-demo{
+    position:relative;background:var(--surface);border-radius:24px;
+    border:1px solid var(--border);box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .canvas-demo-bar{
+    display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--border);
+  }
+  .canvas-demo-bar span{width:9px;height:9px;border-radius:50%;background:var(--border);}
+  .canvas-demo-title{margin-left:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);letter-spacing:0.02em;}
+  .canvas-demo-body{padding:22px 22px 26px;min-height:400px;}
+  .demo-question{
+    display:flex;align-items:center;gap:10px;background:var(--bg);
+    border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;margin-bottom:18px;
+  }
+  .demo-question i{color:var(--primary);}
+  .typewriter{border-right:2px solid var(--primary);white-space:nowrap;overflow:hidden;display:inline-block;}
+  .dna-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .dna-chip{
+    font-size:11px;font-weight:600;padding:5px 10px;border-radius:100px;
+    opacity:0;transform:translateY(6px);animation:chipIn 0.5s forwards;
+  }
+  .dna-chip.c1{background:rgba(79,70,229,0.12);color:var(--primary);animation-delay:1.7s;}
+  .dna-chip.c2{background:rgba(6,182,212,0.12);color:#0891b2;animation-delay:1.9s;}
+  .dna-chip.c3{background:rgba(245,158,11,0.14);color:#b45309;animation-delay:2.1s;}
+  .dna-chip.c4{background:rgba(124,58,237,0.12);color:var(--secondary);animation-delay:2.3s;}
+  @keyframes chipIn{to{opacity:1;transform:translateY(0);}}
+  .lesson-block{
+    opacity:0;transform:translateY(10px);
+    border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px;
+    animation:blockIn 0.55s forwards;
+  }
+  .lesson-block h4{font-size:13.5px;font-family:var(--font-display);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .lesson-block h4 i{font-size:12px;color:var(--primary);width:22px;height:22px;border-radius:7px;background:rgba(79,70,229,0.1);display:flex;align-items:center;justify-content:center;}
+  .lesson-block p{font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
+  .lesson-block.b1{animation-delay:2.6s;}
+  .lesson-block.b2{animation-delay:2.85s;}
+  .lesson-block.b3{animation-delay:3.1s;}
+  @keyframes blockIn{to{opacity:1;transform:translateY(0);}}
+  .bar-skel{height:8px;border-radius:5px;background:var(--border);margin-top:8px;overflow:hidden;position:relative;}
+  .bar-skel::after{content:'';position:absolute;inset:0;width:70%;background:linear-gradient(90deg,transparent,rgba(79,70,229,0.25),transparent);animation:shimmer 1.6s infinite;}
+  @keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(230%);}}
+  .float-badge{
+    position:absolute;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:10px 14px;box-shadow:0 12px 30px -10px rgba(0,0,0,0.15);
+    display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;
+    animation:floaty 4s ease-in-out infinite;
+  }
+  .float-badge.fb1{top:-16px;right:24px;animation-delay:0.2s;}
+  .float-badge.fb2{bottom:22px;left:-26px;animation-delay:1.2s;}
+  .float-badge i{color:var(--success);}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+
+  /* ---------- Reveal on scroll ---------- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease, transform 0.7s cubic-bezier(.2,.8,.2,1);}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  /* ---------- Learner-type cards (Why Personalized Learning Matters) ---------- */
+  .learner-grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;}
+  .lcard{
+    flex:1 1 220px;max-width:250px;
+    border:1px solid var(--border);
+    padding:24px 20px;text-align:left;transition:transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s, border-color 0.3s;
+  }
+  .lcard:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:transparent;}
+  .lcard .lemoji{font-size:30px;line-height:1;margin-bottom:14px;display:block;transition:transform 0.3s;}
+  .lcard:hover .lemoji{transform:scale(1.15) rotate(-4deg);}
+  .lcard h3{font-family:var(--font-display);font-size:16.5px;margin-bottom:8px;letter-spacing:-0.01em;}
+  .lcard p{font-size:13px;color:var(--ink-soft);line-height:1.55;}
+  .lcard-a{border-radius:32px 18px 32px 18px;background:rgba(79,70,229,0.05);}
+  .lcard-b{border-radius:50%/28%;background:rgba(6,182,212,0.06);margin-top:20px;}
+  .lcard-c{border-radius:18px 32px 18px 32px;background:rgba(245,158,11,0.06);}
+  .lcard-d{border-radius:26px;background:rgba(34,197,94,0.06);margin-top:10px;}
+  .lcard-e{border-radius:40% 20% 40% 20%;background:rgba(124,58,237,0.06);}
+  [data-theme="dark"] .lcard{background-color:rgba(255,255,255,0.03);}
+  .honest-note{
+    margin-top:36px;text-align:center;font-size:13px;color:var(--ink-soft);
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .honest-note i{color:var(--accent);}
+
+  /* ---------- Offers grid (What LearnMate AI Offers) ---------- */
+  .offers-grid{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;}
+  .ocard{
+    flex:1 1 260px;max-width:300px;
+    border:1px solid var(--border);
+    padding:26px;transition:transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s;
+  }
+  .ocard:hover{transform:translateY(-6px);box-shadow:var(--shadow);}
+  .ocard .oemoji{font-size:30px;line-height:1;margin-bottom:14px;display:block;transition:transform 0.3s;}
+  .ocard:hover .oemoji{transform:scale(1.15) rotate(4deg);}
+  .ocard h3{font-family:var(--font-display);font-size:17px;margin-bottom:8px;letter-spacing:-0.01em;}
+  .ocard p{font-size:13.5px;color:var(--ink-soft);line-height:1.6;}
+  .ocard-a{border-radius:28px 14px 28px 14px;background:rgba(79,70,229,0.05);}
+  .ocard-b{border-radius:14px 28px 14px 28px;background:rgba(34,197,94,0.06);margin-top:16px;}
+  .ocard-c{border-radius:50%/24%;background:rgba(245,158,11,0.06);}
+  .ocard-d{border-radius:34% 18% 34% 18%;background:rgba(6,182,212,0.06);margin-top:8px;}
+  .ocard-e{border-radius:22px;background:rgba(124,58,237,0.06);}
+  .ocard-f{border-radius:18px 34px 18px 34px;background:rgba(79,70,229,0.05);margin-top:14px;}
+  [data-theme="dark"] .ocard{background-color:rgba(255,255,255,0.03);}
+
+  /* ---------- Vertical timeline (How LearnMate AI Works) ---------- */
+  .vtimeline{position:relative;max-width:640px;margin:0 auto;padding-left:8px;}
+  .vt-line{position:absolute;left:29px;top:10px;bottom:10px;width:2px;background:linear-gradient(180deg,var(--primary),var(--secondary),var(--accent));opacity:0.25;}
+  .vt-item{display:flex;gap:22px;position:relative;padding-bottom:34px;}
+  .vt-item:last-child{padding-bottom:0;}
+  .vt-node{
+    flex-shrink:0;width:60px;height:60px;border-radius:50%;background:var(--surface);
+    border:2px solid var(--border);display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--primary);
+    position:relative;z-index:2;transition:all 0.3s;
+  }
+  .vt-item:hover .vt-node{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-color:transparent;transform:scale(1.06);}
+  .vt-card{
+    flex:1;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);
+    border-radius:16px;padding:16px 20px;display:flex;align-items:center;transition:transform 0.3s, box-shadow 0.3s;
+  }
+  .vt-item:hover .vt-card{transform:translateX(4px);box-shadow:var(--shadow);}
+  .vt-card h4{font-family:var(--font-display);font-size:15.5px;letter-spacing:-0.01em;}
+
+  /* ---------- Learner mosaic (Built for Every Learner) ---------- */
+  .learner-mosaic{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;}
+  .lmos-item{
+    flex:1 1 220px;max-width:260px;padding:26px 22px;
+    display:flex;flex-direction:column;gap:10px;
+    transition:transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s;
+    border:1px solid var(--border);
+  }
+  .lmos-item:hover{transform:translateY(-7px) rotate(-0.5deg);box-shadow:var(--shadow);}
+  .lmos-item .lmos-emoji{font-size:30px;line-height:1;}
+  .lmos-item h4{font-family:var(--font-display);font-size:15.5px;letter-spacing:-0.01em;}
+  .lmos-item p{font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
+  .lmos-a{border-radius:32px 18px 32px 18px;background:rgba(79,70,229,0.06);}
+  .lmos-b{border-radius:50%/30%;background:rgba(6,182,212,0.07);margin-top:22px;}
+  .lmos-c{border-radius:18px 32px 18px 32px;background:rgba(245,158,11,0.07);}
+  .lmos-d{border-radius:26px;background:rgba(34,197,94,0.07);margin-top:14px;}
+  .lmos-e{border-radius:40% 20% 40% 20%;background:rgba(124,58,237,0.07);}
+  [data-theme="dark"] .lmos-item{background-color:rgba(255,255,255,0.03);}
+
+  /* ---------- Boards (Designed for Modern Education) ---------- */
+  .boards-chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:22px;}
+  .chip{
+    display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:100px;
+    background:var(--surface);border:1px solid var(--border);font-size:13.5px;font-weight:600;
+    transition:all 0.3s;
+  }
+  .chip:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:transparent;}
+  .chip .chip-emoji{font-size:16px;}
+  .chip-sm{font-size:12.5px;padding:9px 16px;font-weight:500;color:var(--ink-soft);background:transparent;border-style:dashed;}
+  .boards-highlight{
+    display:flex;align-items:center;gap:20px;background:linear-gradient(120deg,rgba(79,70,229,0.08),rgba(6,182,212,0.08));
+    border:1px solid var(--border);border-radius:24px;padding:26px 28px;margin-bottom:26px;
+  }
+  .boards-highlight .bh-emoji{font-size:38px;flex-shrink:0;}
+  .boards-highlight h4{font-family:var(--font-display);font-size:16.5px;margin-bottom:6px;}
+  .boards-highlight p{font-size:13.5px;color:var(--ink-soft);line-height:1.6;}
+  .boards-disclaimer{
+    text-align:center;font-size:13px;color:var(--ink-soft);max-width:600px;margin:0 auto;line-height:1.65;
+  }
+
+  /* ---------- Section heading ---------- */
+  .sec-head{max-width:640px;margin:0 auto 56px;text-align:center;}
+  .sec-eyebrow{font-size:12.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--secondary);margin-bottom:12px;}
+  .sec-head h2{font-family:var(--font-display);font-size:38px;letter-spacing:-0.02em;line-height:1.15;margin-bottom:14px;}
+  .sec-head p{color:var(--ink-soft);font-size:16px;line-height:1.6;}
+  section{position:relative;z-index:1;padding:100px 0;}
+
+  /* ---------- Bento features ---------- */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:190px;gap:20px;}
+  .bcard{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;display:flex;flex-direction:column;justify-content:flex-end;
+    position:relative;overflow:hidden;transition:transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s;
+  }
+  .bcard:hover{transform:translateY(-6px);box-shadow:var(--shadow);}
+  .bcard .bicon{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:18px;margin-bottom:auto;
+  }
+  .bcard h3{font-family:var(--font-display);font-size:18px;margin-bottom:6px;letter-spacing:-0.01em;}
+  .bcard p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;}
+  .b-large{grid-column:span 2;grid-row:span 2;}
+  .b-large .bicon{width:52px;height:52px;font-size:22px;}
+  .b-large h3{font-size:23px;}
+  .b-large p{font-size:14.5px;}
+  .bg-p{background:linear-gradient(135deg,var(--primary),#6366F1);}
+  .bg-s{background:linear-gradient(135deg,var(--secondary),#9333EA);}
+  .bg-a{background:linear-gradient(135deg,var(--accent),#0891B2);}
+  .bg-w{background:linear-gradient(135deg,var(--warning),#D97706);}
+  .bg-sc{background:linear-gradient(135deg,var(--success),#16A34A);}
+  .b-large::before{
+    content:'';position:absolute;top:-40%;right:-30%;width:70%;height:70%;
+    background:radial-gradient(circle,rgba(79,70,229,0.12),transparent 70%);border-radius:50%;
+  }
+
+
+
+  /* ---------- FAQ ---------- */
+  .faq{max-width:760px;margin:0 auto;}
+  .faq-item{border-bottom:1px solid var(--border);}
+  .faq-q{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:22px 4px;font-weight:600;font-size:15.5px;cursor:pointer;
+  }
+  .faq-q i{transition:transform 0.3s;color:var(--primary);font-size:14px;}
+  .faq-item.open .faq-q i{transform:rotate(45deg);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height 0.4s ease, padding 0.4s ease;font-size:14.5px;color:var(--ink-soft);line-height:1.65;padding:0 4px;}
+  .faq-item.open .faq-a{max-height:200px;padding-bottom:22px;}
+
+  /* ---------- CTA ---------- */
+  .cta-band{
+    position:relative;border-radius:28px;overflow:hidden;padding:70px 40px;text-align:center;
+    background:linear-gradient(135deg,var(--primary),var(--secondary) 60%,var(--accent));
+  }
+  .cta-band::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,0.18),transparent 55%);}
+  .cta-band h2{font-family:var(--font-display);color:#fff;font-size:34px;margin-bottom:14px;letter-spacing:-0.02em;position:relative;}
+  .cta-band p{color:rgba(255,255,255,0.85);margin-bottom:30px;font-size:16px;position:relative;}
+  .btn-white{background:#fff;color:var(--primary);position:relative;}
+  .btn-white:hover{transform:translateY(-2px);box-shadow:0 12px 26px -8px rgba(0,0,0,0.3);}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--border);padding:56px 0 30px;position:relative;z-index:1;}
+  .foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;margin-bottom:44px;}
+  .foot-brand p{font-size:13.5px;color:var(--ink-soft);margin-top:14px;line-height:1.6;max-width:260px;}
+  .foot-col h5{font-size:13px;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
+  .foot-col a{display:block;font-size:14px;color:var(--ink);margin-bottom:11px;transition:color 0.2s;}
+  .foot-col a:hover{color:var(--primary);}
+  .foot-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:26px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-soft);flex-wrap:wrap;gap:14px;}
+  .foot-social{display:flex;gap:12px;}
+  .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all 0.25s;}
+  .foot-social a:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:980px){
+    .hero-grid{grid-template-columns:1fr;}
+    .canvas-demo{order:-1;max-width:520px;margin:0 auto;}
+    .bento{grid-template-columns:repeat(2,1fr);}
+    .b-large{grid-column:span 2;}
+    .foot-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:680px){
+    .nav-links{display:none;}
+    .menu-toggle{display:block;}
+    h1{font-size:38px;}
+    .sec-head h2{font-size:28px;}
+    .bento{grid-template-columns:1fr;grid-auto-rows:auto;}
+    .b-large{grid-column:span 1;}
+    .bcard{min-height:170px;}
+    .lcard,.ocard{flex:1 1 100%;max-width:100%;margin-top:0 !important;}
+    .lmos-item{flex:1 1 100%;max-width:100%;margin-top:0 !important;}
+    .boards-highlight{flex-direction:column;text-align:center;}
+    .vt-node{width:50px;height:50px;font-size:15px;}
+    .vt-line{left:24px;}
+    .foot-grid{grid-template-columns:1fr;gap:28px;}
+    .cta-band h2{font-size:26px;}
+    .wrap{padding:0 20px;}
+    .hero{padding-top:110px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="blob-field">
+  <div class="blob blob-1" id="blob1"></div>
+  <div class="blob blob-2" id="blob2"></div>
+  <div class="blob blob-3" id="blob3"></div>
+</div>
+
+<header>
+  <nav>
+    <a href="#" class="logo"><span class="logo-mark"><svg class="cap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5L2.5 8.2 12 12.9l7.5-3.7V15h1.5V8.2L12 3.5z" fill="white"/><path d="M6 10.7v3.4c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2v-3.4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5c.15 1.6.6 2.35 2.3 2.6-1.7.25-2.15 1-2.3 2.6-.15-1.6-.6-2.35-2.3-2.6 1.7-.25 2.15-1 2.3-2.6z" fill="white"/></svg></span>LearnMate AI</a>
+    <div class="nav-links">
+      <a href="#offers">Features</a>
+      <a href="#learners">Learners</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+      <a href="learnmate-auth.html" class="btn btn-ghost">Log in</a>
+      <a href="learnmate-assessment.html" class="btn btn-primary">Get started free</a>
+      <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><i class="fa-solid fa-sparkles"></i> Built for Class 1–12 · School Edition</div>
+        <h1>Every student learns<br>differently. <span class="grad">Your platform<br>finally does too.</span></h1>
+        <p class="hero-sub">LearnMate AI studies how each student actually learns — their style, pace, weak spots, and goals — then builds every lesson around them. No generic chatbot. A living learning canvas that adapts in real time.</p>
+        <div class="hero-cta">
+          <a href="learnmate-assessment.html" class="btn btn-primary btn-lg">Start learning free <i class="fa-solid fa-arrow-right"></i></a>
+          <a href="#how" class="btn btn-ghost btn-lg"><i class="fa-solid fa-circle-play"></i> See how it works</a>
+        </div>
+        <div class="hero-proof">
+          <i class="fa-solid fa-shield-heart"></i>
+          Built honestly, from the ground up — no shortcuts, no filler.
+        </div>
+      </div>
+
+      <div class="canvas-demo">
+        <div class="canvas-demo-bar">
+          <span></span><span></span><span></span>
+          <div class="canvas-demo-title">AI LEARNING CANVAS</div>
+        </div>
+        <div class="canvas-demo-body">
+          <div class="demo-question"><i class="fa-solid fa-graduation-cap"></i><span class="typewriter" id="typewriter"></span></div>
+          <div class="dna-strip">
+            <span class="dna-chip c1">Class 9</span>
+            <span class="dna-chip c2">Visual Learner</span>
+            <span class="dna-chip c3">Weak: Physics</span>
+            <span class="dna-chip c4">Hindi + English</span>
+          </div>
+          <div class="lesson-block b1">
+            <h4><i class="fa-solid fa-diagram-project"></i>Diagram & Flowchart</h4>
+            <p>Auto-generated visual breakdown, matched to a visual learner.</p>
+            <div class="bar-skel"></div>
+          </div>
+          <div class="lesson-block b2">
+            <h4><i class="fa-solid fa-lightbulb"></i>Real-life Example</h4>
+            <p>Explained through everyday context the student already knows.</p>
+            <div class="bar-skel"></div>
+          </div>
+          <div class="lesson-block b3">
+            <h4><i class="fa-solid fa-brain"></i>Memory Trick + Quiz</h4>
+            <p>Reinforcement tuned to confidence level and revision frequency.</p>
+            <div class="bar-skel"></div>
+          </div>
+        </div>
+        <div class="float-badge fb1"><i class="fa-solid fa-circle-check"></i> Adapted to Learning DNA</div>
+        <div class="float-badge fb2"><i class="fa-solid fa-bolt" style="color:var(--warning)"></i> Generated in 4s</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY PERSONALIZED LEARNING MATTERS -->
+  <section id="learners">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">Why personalized learning matters</div>
+        <h2>Every student learns differently</h2>
+        <p>LearnMate AI adapts every lesson according to the learner, instead of forcing every learner to study the same way.</p>
+      </div>
+      <div class="learner-grid reveal">
+        <div class="lcard lcard-a">
+          <span class="lemoji">👁️</span>
+          <h3>Visual Learner</h3>
+          <p>Best with diagrams, animations and illustrations. LearnMate AI automatically prioritizes visual explanations.</p>
+        </div>
+        <div class="lcard lcard-b">
+          <span class="lemoji">📖</span>
+          <h3>Reading Learner</h3>
+          <p>Prefers detailed notes and written explanations. LearnMate AI generates structured notes and summaries.</p>
+        </div>
+        <div class="lcard lcard-c">
+          <span class="lemoji">✏️</span>
+          <h3>Practice Learner</h3>
+          <p>Learns by solving questions. The platform automatically generates adaptive practice.</p>
+        </div>
+        <div class="lcard lcard-d">
+          <span class="lemoji">📚</span>
+          <h3>Story-Based Learner</h3>
+          <p>Remembers concepts through real-life examples and stories. AI explains difficult concepts using relatable situations.</p>
+        </div>
+        <div class="lcard lcard-e">
+          <span class="lemoji">🧩</span>
+          <h3>Interactive Learner</h3>
+          <p>Learns through quizzes, flashcards and activities. The platform creates engaging experiences instead of passive lectures.</p>
+        </div>
+      </div>
+      <div class="honest-note"><i class="fa-solid fa-circle-info"></i> Student feedback will appear here after public launch.</div>
+    </div>
+  </section>
+
+  <!-- WHAT LEARNMATE AI OFFERS -->
+  <section id="offers">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">Capabilities</div>
+        <h2>What LearnMate AI Offers</h2>
+        <p>Every feature exists to solve one real classroom problem — not to fill a features page.</p>
+      </div>
+      <div class="offers-grid reveal">
+        <div class="ocard ocard-a">
+          <span class="oemoji">🖼️</span>
+          <h3>AI Learning Canvas</h3>
+          <p>Instead of chatting, AI builds a complete lesson with explanations, diagrams, summaries and practice.</p>
+        </div>
+        <div class="ocard ocard-b">
+          <span class="oemoji">🧬</span>
+          <h3>Learning DNA</h3>
+          <p>Learns how each student studies best and personalizes every lesson.</p>
+        </div>
+        <div class="ocard ocard-c">
+          <span class="oemoji">🗓️</span>
+          <h3>Adaptive Study Planner</h3>
+          <p>Automatically rebuilds study schedules when students miss a day.</p>
+        </div>
+        <div class="ocard ocard-d">
+          <span class="oemoji">🎯</span>
+          <h3>Adaptive Quiz</h3>
+          <p>Questions become easier or harder depending on student performance.</p>
+        </div>
+        <div class="ocard ocard-e">
+          <span class="oemoji">🗂️</span>
+          <h3>Smart Revision</h3>
+          <p>Generate flashcards, summaries, mind maps and important questions instantly.</p>
+        </div>
+        <div class="ocard ocard-f">
+          <span class="oemoji">📊</span>
+          <h3>Performance Analytics</h3>
+          <p>Track strengths, weak topics, learning progress and study consistency.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW LEARNMATE AI WORKS -->
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">The process</div>
+        <h2>How LearnMate AI Works</h2>
+        <p>Six steps happen automatically from the moment a student signs in to the moment they're revising smarter.</p>
+      </div>
+      <div class="vtimeline reveal">
+        <div class="vt-line"></div>
+        <div class="vt-item"><div class="vt-node">1</div><div class="vt-card"><h4>Student Login</h4></div></div>
+        <div class="vt-item"><div class="vt-node">2</div><div class="vt-card"><h4>AI Assessment</h4></div></div>
+        <div class="vt-item"><div class="vt-node">3</div><div class="vt-card"><h4>Learning DNA Generated</h4></div></div>
+        <div class="vt-item"><div class="vt-node">4</div><div class="vt-card"><h4>Personalized Study Plan</h4></div></div>
+        <div class="vt-item"><div class="vt-node">5</div><div class="vt-card"><h4>AI Learning Canvas</h4></div></div>
+        <div class="vt-item"><div class="vt-node">6</div><div class="vt-card"><h4>Track Progress & Improve</h4></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUILT FOR EVERY LEARNER -->
+  <section>
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">Coverage</div>
+        <h2>Built for Every Learner</h2>
+        <p>No two students study the same way, so the canvas leans into whichever mode helps a concept click.</p>
+      </div>
+      <div class="learner-mosaic reveal">
+        <div class="lmos-item lmos-a"><div class="lmos-emoji">👁️</div><h4>Visual Learning</h4><p>Diagrams, flowcharts and animations lead the explanation.</p></div>
+        <div class="lmos-item lmos-b"><div class="lmos-emoji">📖</div><h4>Reading Learning</h4><p>Structured notes and written breakdowns, built for re-reading.</p></div>
+        <div class="lmos-item lmos-c"><div class="lmos-emoji">✏️</div><h4>Practice Learning</h4><p>Learn by doing — adaptive questions instead of long paragraphs.</p></div>
+        <div class="lmos-item lmos-d"><div class="lmos-emoji">📚</div><h4>Story Learning</h4><p>Concepts wrapped in relatable, real-life stories and examples.</p></div>
+        <div class="lmos-item lmos-e"><div class="lmos-emoji">🧩</div><h4>Interactive Learning</h4><p>Flashcards, quizzes and hands-on activities over passive reading.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESIGNED FOR MODERN EDUCATION -->
+  <section>
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">Curriculum coverage</div>
+        <h2>Designed for Modern Education</h2>
+        <p>Built to flex around how Indian students are actually taught today — and where that's headed next.</p>
+      </div>
+      <div class="boards-chips reveal">
+        <span class="chip"><span class="chip-emoji">🏛️</span> CBSE</span>
+        <span class="chip"><span class="chip-emoji">🏫</span> ICSE</span>
+        <span class="chip"><span class="chip-emoji">📍</span> State Boards</span>
+        <span class="chip"><span class="chip-emoji">🎓</span> Class 1 – 12</span>
+        <span class="chip"><span class="chip-emoji">🗣️</span> Regional Languages</span>
+        <span class="chip chip-sm">+ more added as we grow</span>
+      </div>
+      <div class="boards-highlight reveal">
+        <div class="bh-emoji">🎯</div>
+        <div>
+          <h4>Future Competitive Exam Support</h4>
+          <p>Foundational support for exams like JEE and NEET is on the roadmap, extending the same personalized approach beyond board curricula as the platform matures.</p>
+        </div>
+      </div>
+      <p class="boards-disclaimer reveal">LearnMate AI is designed to adapt to different learning needs rather than follow one fixed teaching method. It is not officially affiliated or partnered with any board or examination body.</p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">Questions</div>
+        <h2>Everything you're wondering</h2>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-item open">
+          <div class="faq-q">Is LearnMate AI just another chatbot? <i class="fa-solid fa-plus"></i></div>
+          <div class="faq-a">No. Asking a question doesn't open a chat thread — it generates a full structured lesson page (diagrams, examples, quizzes, notes) built around your Learning DNA.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Which classes and boards are supported? <i class="fa-solid fa-plus"></i></div>
+          <div class="faq-a">Class 1 through 12, across CBSE, ICSE, and major state boards, in English and regional languages.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Can it answer non-study questions? <i class="fa-solid fa-plus"></i></div>
+          <div class="faq-a">No — LearnMate AI only responds to educational queries. Anything outside academics is politely declined by design.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is there a free plan for schools? <i class="fa-solid fa-plus"></i></div>
+          <div class="faq-a">Yes, schools can onboard a full classroom to try the core canvas, quiz, and planner features at no cost.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section>
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Ready to see your own Learning DNA?</h2>
+        <p>Takes under 5 minutes. No credit card, no chatbot, just a lesson built for you.</p>
+        <a href="learnmate-auth.html" class="btn btn-white btn-lg">Create your free account <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#" class="logo"><span class="logo-mark"><svg class="cap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5L2.5 8.2 12 12.9l7.5-3.7V15h1.5V8.2L12 3.5z" fill="white"/><path d="M6 10.7v3.4c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2v-3.4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5c.15 1.6.6 2.35 2.3 2.6-1.7.25-2.15 1-2.3 2.6-.15-1.6-.6-2.35-2.3-2.6 1.7-.25 2.15-1 2.3-2.6z" fill="white"/></svg></span>LearnMate AI</a>
+        <p>A personalized learning system for Class 1–12, built for Smart India Hackathon — School Edition.</p>
+      </div>
+      <div class="foot-col"><h5>Product</h5><a href="#features">Features</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+      <div class="foot-col"><h5>Company</h5><a href="#">About</a><a href="#">Careers</a><a href="#">Contact</a></div>
+      <div class="foot-col"><h5>Legal</h5><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Safety</a></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 LearnMate AI. Built for students, not for chat.</span>
+      <div class="foot-social">
+        <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  toggle.addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    toggle.innerHTML = isDark ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+  });
+
+  // Typewriter loop
+  const questions = [
+    "Explain photosynthesis simply",
+    "How does Newton's second law work?",
+    "Why does the moon change shape?",
+    "Help me understand quadratic equations"
+  ];
+  const tw = document.getElementById('typewriter');
+  let qi = 0, ci = 0, deleting = false;
+  function typeLoop(){
+    const current = questions[qi];
+    if(!deleting){
+      ci++;
+      tw.textContent = current.slice(0, ci);
+      if(ci === current.length){ deleting = true; setTimeout(typeLoop, 1400); return; }
+    } else {
+      ci--;
+      tw.textContent = current.slice(0, ci);
+      if(ci === 0){ deleting = false; qi = (qi+1)%questions.length; }
+    }
+    setTimeout(typeLoop, deleting ? 28 : 55);
+  }
+  typeLoop();
+
+  // Restart canvas-demo animation loop
+  const lessonEls = document.querySelectorAll('.lesson-block, .dna-chip');
+  function restartDemo(){
+    lessonEls.forEach(el => { el.style.animation = 'none'; el.offsetHeight; el.style.animation = ''; });
+  }
+  setInterval(restartDemo, 8000);
+
+  // Blob parallax
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 40;
+    const y = (e.clientY / window.innerHeight - 0.5) * 40;
+    document.getElementById('blob1').style.transform = `translate(${x*0.6}px, ${y*0.6}px)`;
+    document.getElementById('blob2').style.transform = `translate(${-x*0.5}px, ${-y*0.5}px)`;
+    document.getElementById('blob3').style.transform = `translate(${x*0.4}px, ${-y*0.4}px)`;
+  });
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); } });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if(!wasOpen) item.classList.add('open');
+    });
+  });
+</script>
+</body>
+</html>
