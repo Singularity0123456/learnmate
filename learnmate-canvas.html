@@ -142,6 +142,14 @@
   .visual-box .big-icon{font-size:44px;margin-bottom:10px;}
   .visual-box h4{font-family:var(--font-display);font-size:15px;margin-bottom:6px;}
   .visual-box p{color:var(--ink-soft);font-size:13px;max-width:420px;margin:0 auto;}
+  .visual-photo-skeleton{display:none;height:220px;border-radius:14px;margin-top:20px;background:linear-gradient(90deg,var(--border) 25%,rgba(120,120,140,0.14) 37%,var(--border) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
+  .visual-photo-skeleton.show{display:block;}
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:0 0;}}
+  .visual-photo{display:none;margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--surface);text-align:left;}
+  .visual-photo.show{display:block;}
+  .visual-photo img{width:100%;max-height:340px;object-fit:cover;display:block;}
+  .visual-photo-credit{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--border);}
+  .visual-photo-credit a{color:var(--ink-soft);text-decoration:underline;}
 
   .story-box{background:linear-gradient(150deg,rgba(245,158,11,0.06),rgba(124,58,237,0.05));border-radius:16px;padding:22px;border-left:3px solid var(--warning);}
 
@@ -216,19 +224,18 @@
     <div class="nav-group">
       <a href="learnmate-dashboard.html" class="nav-item"><span class="icon">🏠</span> Dashboard</a>
       <a href="learnmate-canvas.html" class="nav-item active"><span class="icon">🪄</span> AI Learning Canvas</a>
-      <div class="nav-item"><span class="icon">📅</span> Study Planner</div>
-      <div class="nav-item"><span class="icon">❓</span> Adaptive Quizzes</div>
-      <div class="nav-item"><span class="icon">🗂️</span> Smart Revision</div>
+      <a href="learnmate-quiz.html" class="nav-item"><span class="icon">❓</span> Adaptive Quizzes</a>
+      <a href="learnmate-revision.html" class="nav-item"><span class="icon">🗂️</span> Smart Revision</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Insights</div>
-      <div class="nav-item"><span class="icon">📈</span> Analytics</div>
-      <div class="nav-item"><span class="icon">🧬</span> Learning DNA</div>
+      <a href="learnmate-analytics.html" class="nav-item"><span class="icon">📈</span> Analytics</a>
+      <a href="learnmate-learning-dna.html" class="nav-item"><span class="icon">🧬</span> Learning DNA</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Account</div>
-      <div class="nav-item"><span class="icon">⚙️</span> Settings</div>
-      <div class="nav-item"><span class="icon">ℹ️</span> Help &amp; Support</div>
+      <a href="learnmate-settings.html" class="nav-item"><span class="icon">⚙️</span> Settings</a>
+      <a href="learnmate-help.html" class="nav-item"><span class="icon">ℹ️</span> Help &amp; Support</a>
     </div>
 
     <div class="sidebar-bottom">
@@ -322,6 +329,11 @@
               <div class="big-icon" id="visualIcon">📊</div>
               <h4 id="visualTitle">Visual walkthrough</h4>
               <p id="visualCaption">A diagram would render here in the full product, generated to match this exact topic.</p>
+              <div class="visual-photo-skeleton" id="visualPhotoSkeleton"></div>
+              <div class="visual-photo" id="visualPhoto">
+                <img id="visualPhotoImg" alt="">
+                <div class="visual-photo-credit"><span>📷 Reference photo</span><span id="visualPhotoAttr"></span></div>
+              </div>
             </div>
             <div class="lesson-body" id="visualNotes"></div>
           </div>
@@ -541,6 +553,45 @@
     }
   }
 
+  // ---------- Visual tab: real reference photo (Wikimedia Commons, no API key required) ----------
+  let photoRequestId = 0;
+  async function loadTopicPhoto(topic, subject){
+    const myId = ++photoRequestId;
+    const wrap = document.getElementById('visualPhoto');
+    const skeleton = document.getElementById('visualPhotoSkeleton');
+    const img = document.getElementById('visualPhotoImg');
+    const attr = document.getElementById('visualPhotoAttr');
+    wrap.classList.remove('show');
+    skeleton.classList.add('show');
+    try{
+      const query = `${topic} ${subject}`;
+      const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(query + ' filetype:bitmap')}&gsrlimit=8&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1000&format=json&origin=*`;
+      const res = await fetch(apiUrl);
+      if(!res.ok) throw new Error('lookup failed');
+      const json = await res.json();
+      const pages = json.query && json.query.pages ? Object.values(json.query.pages) : [];
+      const pick = pages.find(p => p.imageinfo && p.imageinfo[0] && p.imageinfo[0].thumburl && /\.(jpe?g|png)(\?|$)/i.test(p.imageinfo[0].thumburl));
+      if(!pick) throw new Error('no suitable photo found');
+      const info = pick.imageinfo[0];
+      const src = info.thumburl || info.url;
+      // Pre-load so we never flash a broken image
+      await new Promise((resolve, reject) => { const test = new Image(); test.onload = resolve; test.onerror = reject; test.src = src; });
+      if(myId !== photoRequestId) return; // a newer request/topic superseded this one
+      const meta = info.extmetadata || {};
+      const artistRaw = (meta.Artist && meta.Artist.value) || (meta.Credit && meta.Credit.value) || 'Wikimedia Commons';
+      const artist = artistRaw.replace(/<[^>]+>/g, '').trim() || 'Wikimedia Commons';
+      img.src = src;
+      img.alt = `Reference photo related to ${topic}`;
+      attr.textContent = artist.length > 40 ? artist.slice(0,40) + '…' : artist;
+      skeleton.classList.remove('show');
+      wrap.classList.add('show');
+    }catch(e){
+      if(myId !== photoRequestId) return;
+      skeleton.classList.remove('show');
+      wrap.classList.remove('show'); // fall back to the icon-only visual box, no error shown to the learner
+    }
+  }
+
   const formatIcons = { explanation:'📖', visual:'📊', story:'📜', practice:'✏️', interactive:'🎮' };
   const formatLabels = { explanation:'Explanation', visual:'Visual', story:'Story mode', practice:'Practice', interactive:'Interactive' };
 
@@ -582,6 +633,7 @@
     document.getElementById('visualTitle').textContent = `${topic} — visual walkthrough`;
     document.getElementById('visualCaption').textContent = data.visualCaption;
     document.getElementById('visualNotes').innerHTML = data.visualNotes;
+    loadTopicPhoto(topic, data.subject);
 
     // Story
     document.getElementById('storyText').innerHTML = data.story;

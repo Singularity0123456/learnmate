@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LearnMate AI — Smart Revision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#4F46E5; --primary-light:#6366F1; --secondary:#7C3AED; --accent:#06B6D4;
+    --success:#22C55E; --warning:#F59E0B; --danger:#EF4444;
+    --bg:#F7F8FC; --surface:#FFFFFF; --ink:#12131A; --ink-soft:#5B5F73;
+    --border:rgba(18,19,26,0.08); --glass:rgba(255,255,255,0.6);
+    --radius:18px; --shadow:0 10px 40px -12px rgba(79,70,229,0.18);
+    --font-display:'Space Grotesk', sans-serif; --font-body:'Inter', sans-serif;
+    --sidebar-w:250px;
+  }
+  [data-theme="dark"]{
+    --bg:#0A0D1A; --surface:#12162A; --ink:#F2F3F8; --ink-soft:#9498B0;
+    --border:rgba(255,255,255,0.08); --glass:rgba(18,22,42,0.6);
+    --shadow:0 10px 45px -12px rgba(124,58,237,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+  body{font-family:var(--font-body);background:var(--bg);color:var(--ink);transition:background 0.4s,color 0.4s;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  ::selection{background:var(--primary);color:#fff;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;}
+  .icon{font-style:normal;line-height:1;display:inline-block;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar (shared) ---------- */
+  .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:17px;padding:0 8px;margin-bottom:30px;}
+  .logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(150deg,#8B7CF6,var(--primary) 55%,var(--secondary));display:flex;align-items:center;justify-content:center;color:#fff;position:relative;box-shadow:0 6px 16px -4px rgba(79,70,229,0.5);flex-shrink:0;}
+  .logo-mark svg.cap-icon{width:16px;height:16px;}
+  .logo-mark svg.sparkle{position:absolute;top:-5px;right:-6px;width:12px;height:12px;}
+  .nav-group{margin-bottom:22px;}
+  .nav-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);padding:0 12px;margin-bottom:8px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;font-size:14px;font-weight:500;color:var(--ink-soft);transition:all 0.2s;margin-bottom:2px;}
+  .nav-item .icon{width:18px;text-align:center;font-size:15px;}
+  .nav-item:hover{background:var(--border);color:var(--ink);}
+  .nav-item.active{background:linear-gradient(135deg,rgba(79,70,229,0.12),rgba(124,58,237,0.1));color:var(--primary);font-weight:700;}
+  .sidebar-bottom{margin-top:auto;}
+  .plan-card{background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;padding:16px;color:#fff;margin-bottom:14px;}
+  .plan-card .icon{font-size:20px;margin-bottom:8px;display:block;}
+  .plan-card h5{font-size:13px;font-family:var(--font-display);margin-bottom:4px;}
+  .plan-card p{font-size:11.5px;opacity:0.85;margin-bottom:12px;line-height:1.4;}
+  .plan-card button{background:#fff;color:var(--primary);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;width:100%;}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;transition:background 0.2s;}
+  .user-chip:hover{background:var(--border);}
+  .user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+  .user-chip .u-name{font-size:13px;font-weight:700;}
+  .user-chip .u-meta{font-size:11px;color:var(--ink-soft);}
+  .user-chip .logout{margin-left:auto;color:var(--ink-soft);font-size:14px;}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:10;background:var(--glass);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:20px;}
+  .search-wrap{flex:1;max-width:420px;position:relative;}
+  .search-wrap .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:14px;}
+  .search-wrap input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13.5px;}
+  .search-wrap input:focus{outline:none;border-color:var(--primary);}
+  .topbar-actions{display:flex;align-items:center;gap:12px;margin-left:auto;}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);position:relative;transition:all 0.2s;font-size:15px;}
+  .icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+  .content{padding:30px 32px 70px;max-width:1100px;}
+  .page-head{margin-bottom:22px;}
+  .page-head .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--primary);background:rgba(79,70,229,0.09);padding:6px 12px;border-radius:100px;margin-bottom:12px;}
+  .page-head h1{font-family:var(--font-display);font-size:27px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .page-head p{color:var(--ink-soft);font-size:14px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+
+  /* ---------- Saved-for-revision chips ---------- */
+  .saved-card{margin-bottom:20px;}
+  .saved-empty{font-size:13.5px;color:var(--ink-soft);line-height:1.6;}
+  .saved-empty a{color:var(--primary);font-weight:700;}
+  .saved-chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .saved-chip{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:100px;border:1px solid var(--border);background:var(--bg);font-size:12.5px;font-weight:600;transition:all 0.2s;}
+  .saved-chip:hover{border-color:var(--primary);color:var(--primary);}
+  .saved-chip .subj{opacity:0.6;font-weight:500;}
+  .saved-chip .remove{margin-left:2px;opacity:0.5;font-size:11px;}
+  .saved-chip .remove:hover{opacity:1;color:var(--danger);}
+
+  /* ---------- Generator ---------- */
+  .generator-card{margin-bottom:24px;}
+  .gen-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .gen-select{flex:1;min-width:160px;padding:13px 16px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit;}
+  .gen-select:focus{outline:none;border-color:var(--primary);}
+  .gen-btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:12px;font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;box-shadow:0 8px 20px -6px rgba(79,70,229,0.5);transition:all 0.25s;flex-shrink:0;}
+  .gen-btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px -6px rgba(79,70,229,0.6);}
+  .suggest-label{font-size:12px;color:var(--ink-soft);font-weight:600;margin:14px 0 8px;}
+  .suggest-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .suggest-chip{font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:100px;border:1px solid var(--border);background:var(--bg);transition:all 0.2s;}
+  .suggest-chip:hover{border-color:var(--primary);color:var(--primary);}
+
+  /* ---------- Mode tabs ---------- */
+  .pack{display:none;}
+  .pack.show{display:block;}
+  .mode-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:14px;}
+  .mode-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:700;color:var(--ink-soft);transition:all 0.2s;}
+  .mode-tab:hover{background:var(--bg);}
+  .mode-tab.active{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;}
+  .mode-panel{display:none;}
+  .mode-panel.active{display:block;}
+
+  .pack-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .pack-title h2{font-family:var(--font-display);font-size:21px;letter-spacing:-0.01em;margin-bottom:8px;}
+  .pack-tag{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:100px;background:rgba(79,70,229,0.1);color:var(--primary);}
+
+  /* ---------- Flashcards ---------- */
+  .fc-wrap{max-width:460px;margin:0 auto;}
+  .fc-progress-track{height:6px;border-radius:100px;background:var(--border);overflow:hidden;margin-bottom:22px;}
+  .fc-progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width 0.4s cubic-bezier(.2,.8,.2,1);}
+  .fc-card{
+    height:260px;border-radius:20px;cursor:pointer;position:relative;perspective:1200px;margin-bottom:18px;
+  }
+  .fc-inner{position:relative;width:100%;height:100%;transition:transform 0.55s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d;}
+  .fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+  .fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;}
+  .fc-front{background:linear-gradient(150deg,rgba(79,70,229,0.08),rgba(6,182,212,0.06));border:1.5px solid var(--border);}
+  .fc-front .fc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--primary);margin-bottom:14px;}
+  .fc-front h3{font-family:var(--font-display);font-size:19px;line-height:1.4;}
+  .fc-back{background:linear-gradient(150deg,var(--primary),var(--secondary));color:#fff;transform:rotateY(180deg);}
+  .fc-back .fc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;opacity:0.75;margin-bottom:14px;}
+  .fc-back p{font-size:14.5px;line-height:1.6;}
+  .fc-hint{text-align:center;font-size:12px;color:var(--ink-soft);margin-bottom:20px;}
+  .fc-controls{display:flex;gap:10px;justify-content:center;}
+  .fc-btn{flex:1;max-width:190px;padding:13px;border-radius:12px;font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;}
+  .fc-btn-again{background:rgba(239,68,68,0.08);color:var(--danger);}
+  .fc-btn-again:hover{background:rgba(239,68,68,0.15);}
+  .fc-btn-know{background:rgba(34,197,94,0.1);color:var(--success);}
+  .fc-btn-know:hover{background:rgba(34,197,94,0.18);}
+  .fc-nav{display:flex;justify-content:space-between;margin-top:16px;}
+  .fc-nav button{font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  .fc-nav button:hover{color:var(--primary);}
+  .fc-done{display:none;text-align:center;padding:30px 10px;}
+  .fc-done.show{display:block;}
+  .fc-done .icon{font-size:38px;margin-bottom:12px;display:block;}
+  .fc-done h3{font-family:var(--font-display);font-size:19px;margin-bottom:8px;}
+  .fc-done p{color:var(--ink-soft);font-size:13.5px;margin-bottom:18px;}
+
+  /* ---------- Mind map ---------- */
+  .mm-wrap{position:relative;height:420px;background:linear-gradient(150deg,rgba(79,70,229,0.04),rgba(6,182,212,0.04));border-radius:18px;border:1px solid var(--border);overflow:hidden;}
+  .mm-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:16px 22px;border-radius:16px;font-family:var(--font-display);font-weight:700;font-size:14.5px;text-align:center;max-width:180px;box-shadow:0 10px 26px -8px rgba(79,70,229,0.5);z-index:2;}
+  .mm-node{position:absolute;background:var(--surface);border:1.5px solid var(--border);padding:10px 14px;border-radius:12px;font-size:12.5px;font-weight:600;text-align:center;max-width:150px;transform:translate(-50%,-50%);z-index:2;transition:all 0.2s;}
+  .mm-node:hover{border-color:var(--primary);color:var(--primary);transform:translate(-50%,-50%) scale(1.06);box-shadow:var(--shadow);}
+  .mm-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+  .mm-lines line{stroke:var(--border);stroke-width:2;}
+
+  /* ---------- Summary notes ---------- */
+  .summary-list{display:flex;flex-direction:column;gap:14px;}
+  .summary-item{display:flex;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;}
+  .summary-item .bullet{width:26px;height:26px;border-radius:8px;background:rgba(79,70,229,0.1);color:var(--primary);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .summary-item p{font-size:13.5px;line-height:1.6;padding-top:2px;}
+
+  /* ---------- Important questions ---------- */
+  .iq-item{border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+  .iq-item h5{font-size:13.5px;font-weight:700;margin-bottom:8px;}
+  .reveal-btn{font-size:12px;font-weight:700;color:var(--primary);}
+  .reveal-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:13px;color:var(--ink-soft);line-height:1.6;}
+  .reveal-answer.show{display:block;}
+
+  .pack-complete-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:22px;padding:18px 22px;border-radius:16px;background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(6,182,212,0.06));}
+  .pack-complete-bar p{font-size:13px;color:var(--ink-soft);}
+  .complete-btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border-radius:11px;font-weight:700;font-size:13.5px;background:linear-gradient(135deg,var(--success),#16A34A);color:#fff;transition:all 0.2s;}
+  .complete-btn:hover{transform:translateY(-2px);}
+  .complete-btn.done{background:var(--border);color:var(--ink-soft);}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);padding:14px 18px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;transform:translateY(120%);opacity:0;transition:all 0.35s cubic-bezier(.2,.8,.2,1);z-index:100;}
+  .toast.show{transform:translateY(0);opacity:1;}
+
+  @media (max-width:820px){
+    .sidebar{display:none;}
+    .content{padding:24px 18px 50px;}
+    .topbar{padding:14px 18px;}
+    .mm-wrap{height:520px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="learnmate-landing.html" class="logo"><span class="logo-mark"><svg class="cap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5L2.5 8.2 12 12.9l7.5-3.7V15h1.5V8.2L12 3.5z" fill="white"/><path d="M6 10.7v3.4c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2v-3.4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5c.15 1.6.6 2.35 2.3 2.6-1.7.25-2.15 1-2.3 2.6-.15-1.6-.6-2.35-2.3-2.6 1.7-.25 2.15-1 2.3-2.6z" fill="white"/></svg></span>LearnMate AI</a>
+
+    <div class="nav-group">
+      <a href="learnmate-dashboard.html" class="nav-item"><span class="icon">🏠</span> Dashboard</a>
+      <a href="learnmate-canvas.html" class="nav-item"><span class="icon">🪄</span> AI Learning Canvas</a>
+      <a href="learnmate-quiz.html" class="nav-item"><span class="icon">❓</span> Adaptive Quizzes</a>
+      <a href="learnmate-revision.html" class="nav-item active"><span class="icon">🗂️</span> Smart Revision</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Insights</div>
+      <a href="learnmate-analytics.html" class="nav-item"><span class="icon">📈</span> Analytics</a>
+      <a href="learnmate-learning-dna.html" class="nav-item"><span class="icon">🧬</span> Learning DNA</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Account</div>
+      <a href="learnmate-settings.html" class="nav-item"><span class="icon">⚙️</span> Settings</a>
+      <a href="learnmate-help.html" class="nav-item"><span class="icon">ℹ️</span> Help &amp; Support</a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="plan-card">
+        <span class="icon">🗂️</span>
+        <h5>Revise smarter</h5>
+        <p>Flashcards, mind maps and key questions — built from what you've already studied.</p>
+        <button onclick="document.getElementById('subjectSelect').focus()">Start revising</button>
+      </div>
+      <a href="learnmate-dashboard.html" class="user-chip">
+        <div class="user-avatar" id="userInitial">S</div>
+        <div>
+          <div class="u-name" id="userName">Student</div>
+          <div class="u-meta" id="userMeta">Class — · —</div>
+        </div>
+        <span class="icon logout">🚪</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Ask anything — Photosynthesis, Newton's laws, Trigonometry...">
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle icon-btn" id="themeToggle" aria-label="Toggle dark mode"><span class="icon">🌙</span></button>
+        <button class="icon-btn"><span class="icon">🔔</span></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div class="eyebrow"><span class="icon">🗂️</span> Smart Revision</div>
+        <h1>Revise faster with the material you've already covered</h1>
+        <p id="pageSub">Flashcards, mind maps, summary notes and important questions — generated per topic and tracked in your progress.</p>
+      </div>
+
+      <!-- Saved lessons from the AI Canvas -->
+      <div class="card saved-card">
+        <div style="font-family:var(--font-display);font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">🔖 Saved from your lessons</div>
+        <div id="savedEmpty" class="saved-empty">Nothing saved yet — open a lesson in the <a href="learnmate-canvas.html">AI Learning Canvas</a> and tap "Save to revision" to build your list. Meanwhile, pick any topic below to start revising right away.</div>
+        <div class="saved-chips" id="savedChips"></div>
+      </div>
+
+      <!-- Generator -->
+      <div class="card generator-card">
+        <div class="gen-row">
+          <select class="gen-select" id="subjectSelect"></select>
+          <select class="gen-select" id="topicSelect"></select>
+          <button class="gen-btn" id="generateBtn"><span class="icon">🗂️</span> Build revision pack</button>
+        </div>
+        <div class="suggest-label">Suggested — your weakest subject:</div>
+        <div class="suggest-chips" id="suggestChips"></div>
+      </div>
+
+      <!-- Revision pack -->
+      <div class="pack" id="pack">
+        <div class="pack-head">
+          <div class="pack-title">
+            <h2 id="packTitle">Topic</h2>
+            <span class="pack-tag" id="packSubjectTag">Subject</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="mode-tabs" id="modeTabs">
+            <div class="mode-tab active" data-mode="flashcards"><span class="icon">🃏</span> Flashcards</div>
+            <div class="mode-tab" data-mode="mindmap"><span class="icon">🧠</span> Mind Map</div>
+            <div class="mode-tab" data-mode="summary"><span class="icon">📝</span> Summary Notes</div>
+            <div class="mode-tab" data-mode="questions"><span class="icon">❓</span> Important Questions</div>
+          </div>
+
+          <!-- Flashcards -->
+          <div class="mode-panel active" id="panel-flashcards">
+            <div class="fc-wrap">
+              <div class="fc-progress-track"><div class="fc-progress-fill" id="fcProgressFill" style="width:0%;"></div></div>
+
+              <div id="fcActive">
+                <div class="fc-card" id="fcCard">
+                  <div class="fc-inner">
+                    <div class="fc-face fc-front">
+                      <span class="fc-label">Question</span>
+                      <h3 id="fcFront">Front of card</h3>
+                    </div>
+                    <div class="fc-face fc-back">
+                      <span class="fc-label">Answer</span>
+                      <p id="fcBack">Back of card</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="fc-hint">Tap the card to flip it</div>
+                <div class="fc-controls">
+                  <button class="fc-btn fc-btn-again" id="fcAgain"><span class="icon">🔁</span> Still learning</button>
+                  <button class="fc-btn fc-btn-know" id="fcKnow"><span class="icon">✅</span> I know this</button>
+                </div>
+                <div class="fc-nav">
+                  <button id="fcPrev">← Previous</button>
+                  <span id="fcCount" style="font-size:12.5px;color:var(--ink-soft);">1 / 5</span>
+                  <button id="fcNext">Next →</button>
+                </div>
+              </div>
+
+              <div class="fc-done" id="fcDone">
+                <span class="icon">🎉</span>
+                <h3>Deck complete!</h3>
+                <p id="fcDoneSummary">You knew 0 of 0 cards. Nice work.</p>
+                <button class="gen-btn" id="fcRestart"><span class="icon">🔁</span> Go through again</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mind map -->
+          <div class="mode-panel" id="panel-mindmap">
+            <div class="mm-wrap" id="mmWrap">
+              <svg class="mm-lines" id="mmLines"></svg>
+              <div class="mm-center" id="mmCenter">Topic</div>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="mode-panel" id="panel-summary">
+            <div class="summary-list" id="summaryList"></div>
+          </div>
+
+          <!-- Important questions -->
+          <div class="mode-panel" id="panel-questions">
+            <div id="iqList"></div>
+          </div>
+        </div>
+
+        <div class="pack-complete-bar">
+          <p id="completeText">Go through the flashcards or questions above, then mark this revision session complete.</p>
+          <button class="complete-btn" id="completeBtn"><span class="icon">✓</span> Mark revision complete</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="icon">✅</span><span id="toastText">Nice work!</span></div>
+
+<script>
+  // ---------- Theme ----------
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  toggle.addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    toggle.querySelector('.icon').textContent = isDark ? '🌙' : '☀️';
+  });
+
+  function showToast(text){
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  // ---------- Learning DNA ----------
+  let dna = null;
+  try{ dna = JSON.parse(localStorage.getItem('learnmate_dna')); }catch(e){}
+  const fallback = {
+    classLevel:'10', board:'CBSE', subjects:{ Maths:0, Science:0, English:0, "Social Science":0 },
+    style:'Visual Learner', weakSubject:'Maths', goals:['Score higher in exams'], language:'English', time:'30 min'
+  };
+  const d = dna || fallback;
+  document.getElementById('userMeta').textContent = `Class ${d.classLevel || '—'} · ${d.board || '—'}`;
+
+  // ---------- Shared progress store (same schema dashboard / canvas / quiz read & write) ----------
+  const PROGRESS_KEY = 'learnmate_progress';
+  let progress = null;
+  try{ progress = JSON.parse(localStorage.getItem(PROGRESS_KEY)); }catch(e){}
+  if(!progress){
+    const subjectProgress = {};
+    Object.keys(d.subjects).forEach(s => subjectProgress[s] = 0);
+    progress = { streak:0, bestStreak:0, lessonsCompleted:0, quizScores:[], subjectProgress, planDone:{}, activity:[], completedLessons:[] };
+  }
+  if(!progress.revisedTopics) progress.revisedTopics = [];
+  function saveProgress(){ localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress)); }
+
+  const SAVED_KEY = 'learnmate_saved_lessons';
+  function getSaved(){ try{ return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; }catch(e){ return []; } }
+  function setSaved(list){ localStorage.setItem(SAVED_KEY, JSON.stringify(list)); }
+
+  // ---------- Topic bank ----------
+  const topicsBySubject = {
+    Maths: ['Quadratic Equations','Linear Equations','Trigonometry Basics','Probability'],
+    Science: ["Newton's Laws of Motion", 'Photosynthesis', 'The Periodic Table', 'Electric Circuits'],
+    English: ['Figures of Speech', 'Tenses', 'Active & Passive Voice', 'Comprehension Skills'],
+    "Social Science": ['The French Revolution', 'Indian Constitution', 'Climate & Vegetation', 'Resources & Development']
+  };
+
+  const REVISION_BANK = {
+    "Quadratic Equations": { summary:["A quadratic equation has the standard form ax\u00b2 + bx + c = 0, where a \u2260 0.","Roots can be found by factoring, completing the square, or the quadratic formula.","The discriminant b\u00b2 \u2212 4ac tells you how many real roots exist."], flashcards:[{q:"Standard form of a quadratic equation?",a:"ax\u00b2 + bx + c = 0, where a \u2260 0."},{q:"What does the discriminant tell you?",a:"Whether the roots are real and distinct, real and equal, or imaginary."},{q:"Quadratic formula?",a:"x = (\u2212b \u00b1 \u221a(b\u00b2\u22124ac)) / 2a"},{q:"When are the roots equal?",a:"When the discriminant b\u00b2\u22124ac = 0."},{q:"Sum of roots in terms of a, b?",a:"\u2212b/a"}], questions:[{q:"Derive the quadratic formula by completing the square.",a:"Start from ax\u00b2+bx+c=0, divide by a, complete the square on x\u00b2+(b/a)x, then solve for x to arrive at x=(\u2212b\u00b1\u221a(b\u00b2\u22124ac))/2a."},{q:"Find the roots of x\u00b2 \u2212 5x + 6 = 0.",a:"Factors as (x\u22122)(x\u22123)=0, so x = 2 or x = 3."},{q:"When does a quadratic have no real roots?",a:"When the discriminant b\u00b2\u22124ac is negative."}], mindmap:["Standard form ax\u00b2+bx+c=0","Factoring method","Completing the square","Quadratic formula","Discriminant b\u00b2\u22124ac","Nature of roots"] },
+    "Linear Equations": { summary:["A linear equation in one variable has the form ax + b = 0.","Two linear equations in two variables can be solved by substitution, elimination, or graphically.","The graph of a linear equation is always a straight line."], flashcards:[{q:"General form of a linear equation in two variables?",a:"ax + by + c = 0"},{q:"Name two algebraic methods to solve simultaneous linear equations.",a:"Substitution method and elimination method."},{q:"What does the graph of a linear equation look like?",a:"A straight line."},{q:"When do two linear equations have no solution?",a:"When their graphs are parallel lines (same slope, different intercepts)."},{q:"When do two linear equations have infinite solutions?",a:"When both equations represent the same line."}], questions:[{q:"Solve 2x + 3y = 12 and x \u2212 y = 1 using substitution.",a:"From the second equation, x = y+1. Substitute: 2(y+1)+3y=12 \u2192 5y=10 \u2192 y=2, x=3."},{q:"What is the elimination method?",a:"Multiplying equations so one variable's coefficients match, then adding/subtracting to eliminate it."},{q:"Give a real-life example modeled by a linear equation.",a:"Total cost = fixed cost + (price per item \u00d7 number of items)."}], mindmap:["Form ax+by+c=0","Substitution method","Elimination method","Graphical method","Parallel lines = no solution","Same line = infinite solutions"] },
+    "Trigonometry Basics": { summary:["Trigonometric ratios (sin, cos, tan) relate the angles of a right triangle to the ratios of its sides.","sin\u00b2\u03b8 + cos\u00b2\u03b8 = 1 is the most-used identity.","Standard angle values (0\u00b0, 30\u00b0, 45\u00b0, 60\u00b0, 90\u00b0) are worth memorizing."], flashcards:[{q:"sin\u03b8 = ?",a:"Opposite side / Hypotenuse"},{q:"cos\u03b8 = ?",a:"Adjacent side / Hypotenuse"},{q:"tan\u03b8 = ?",a:"Opposite side / Adjacent side = sin\u03b8/cos\u03b8"},{q:"Value of sin 30\u00b0?",a:"1/2"},{q:"Pythagorean identity relating sin and cos?",a:"sin\u00b2\u03b8 + cos\u00b2\u03b8 = 1"}], questions:[{q:"Prove sin\u00b2\u03b8 + cos\u00b2\u03b8 = 1 using the Pythagorean theorem.",a:"In a right triangle, opposite\u00b2+adjacent\u00b2=hypotenuse\u00b2. Dividing throughout by hypotenuse\u00b2 gives sin\u00b2\u03b8+cos\u00b2\u03b8=1."},{q:"Find tan 45\u00b0.",a:"1, since sin45\u00b0=cos45\u00b0=\u221a2/2."},{q:"Where is trigonometry used in real life?",a:"Measuring heights/distances, navigation, engineering, and architecture."}], mindmap:["sin = opp/hyp","cos = adj/hyp","tan = opp/adj","Pythagorean identity","Standard angles","Real-world uses"] },
+    "Probability": { summary:["Probability of an event = (favourable outcomes) / (total outcomes).","Probability always lies between 0 and 1, inclusive.","The probabilities of all outcomes in a sample space add up to 1."], flashcards:[{q:"Formula for probability of an event E?",a:"P(E) = favourable outcomes / total outcomes"},{q:"Range of possible probability values?",a:"0 \u2264 P(E) \u2264 1"},{q:"Probability of a sure event?",a:"1"},{q:"Probability of an impossible event?",a:"0"},{q:"P(E) + P(not E) = ?",a:"1"}], questions:[{q:"A die is rolled once. Find the probability of getting an even number.",a:"Favourable outcomes {2,4,6} = 3, total outcomes = 6, so P = 3/6 = 1/2."},{q:"What is a sample space?",a:"The set of all possible outcomes of an experiment."},{q:"Two coins are tossed. Find P(exactly one head).",a:"Sample space {HH,HT,TH,TT}. Favourable = {HT,TH} = 2, so P = 2/4 = 1/2."}], mindmap:["Favourable / total outcomes","Range 0 to 1","Sure event = 1","Impossible event = 0","Sample space","Complementary events"] },
+    "Newton's Laws of Motion": { summary:["First law: an object stays at rest or in uniform motion unless acted on by a net force.","Second law: F = ma \u2014 force equals mass times acceleration.","Third law: every action has an equal and opposite reaction."], flashcards:[{q:"State Newton's First Law.",a:"An object remains at rest or moves with constant velocity unless acted upon by a net external force."},{q:"Formula for Newton's Second Law?",a:"F = ma"},{q:"State Newton's Third Law.",a:"For every action there is an equal and opposite reaction."},{q:"What is inertia?",a:"The tendency of an object to resist a change in its state of motion."},{q:"Unit of force in SI system?",a:"Newton (N), equal to kg\u00b7m/s\u00b2"}], questions:[{q:"A 2 kg object accelerates at 3 m/s\u00b2. Find the force applied.",a:"F = ma = 2 \u00d7 3 = 6 N."},{q:"Why does a rocket move forward when gas is expelled backward?",a:"By Newton's Third Law \u2014 the backward force on the gas produces an equal forward reaction force on the rocket."},{q:"Give a everyday example of Newton's First Law.",a:"Passengers jerk forward when a moving bus suddenly brakes, because their bodies resist the change in motion."}], mindmap:["1st Law: Inertia","2nd Law: F = ma","3rd Law: Action-reaction","Unit: Newton","Mass vs weight","Everyday examples"] },
+    "Photosynthesis": { summary:["Photosynthesis converts light energy into chemical energy stored in glucose.","It occurs mainly in the chloroplasts of plant cells, using chlorophyll.","The overall equation: 6CO\u2082 + 6H\u2082O + light \u2192 C\u2086H\u2081\u2082O\u2086 + 6O\u2082."], flashcards:[{q:"Where does photosynthesis mainly occur?",a:"In the chloroplasts of plant cells."},{q:"What pigment captures light energy?",a:"Chlorophyll"},{q:"Write the overall word equation.",a:"Carbon dioxide + Water + Light energy \u2192 Glucose + Oxygen"},{q:"What are the two main stages of photosynthesis?",a:"The light-dependent reactions and the light-independent reactions (Calvin cycle)."},{q:"Gas released as a byproduct?",a:"Oxygen"}], questions:[{q:"Why are leaves usually green?",a:"Chlorophyll absorbs red and blue light but reflects green light, making leaves appear green."},{q:"What factors affect the rate of photosynthesis?",a:"Light intensity, carbon dioxide concentration, and temperature."},{q:"How is photosynthesis important for other living things?",a:"It produces the oxygen most organisms need for respiration and the glucose that forms the base of food chains."}], mindmap:["Occurs in chloroplasts","Chlorophyll absorbs light","6CO\u2082+6H\u2082O\u2192C\u2086H\u2081\u2082O\u2086+6O\u2082","Light-dependent reactions","Calvin cycle","Produces oxygen"] },
+    "The Periodic Table": { summary:["Elements are arranged in order of increasing atomic number.","Elements in the same group share similar chemical properties.","Metals are mostly on the left, non-metals on the right, metalloids along the zig-zag line."], flashcards:[{q:"What determines an element's position in the periodic table?",a:"Its atomic number (number of protons)."},{q:"What do elements in the same group share?",a:"The same number of valence electrons and similar chemical properties."},{q:"What is a period in the periodic table?",a:"A horizontal row of elements."},{q:"Where are metals mostly located?",a:"On the left and center of the periodic table."},{q:"Where are noble gases located?",a:"The rightmost group (Group 18)."}], questions:[{q:"Why do elements in the same group behave similarly?",a:"Because they have the same number of valence electrons, which determines chemical reactivity."},{q:"What trend is seen in atomic size across a period?",a:"Atomic size generally decreases left to right due to increasing nuclear charge."},{q:"Name one property that increases down a group.",a:"Atomic size (or metallic character) generally increases down a group."}], mindmap:["Arranged by atomic number","Groups = columns","Periods = rows","Metals on the left","Non-metals on the right","Noble gases: Group 18"] },
+    "Electric Circuits": { summary:["A circuit needs a closed loop for current to flow.","Ohm's Law: V = IR, relating voltage, current, and resistance.","Series circuits share current; parallel circuits share voltage."], flashcards:[{q:"State Ohm's Law.",a:"V = IR \u2014 voltage equals current times resistance."},{q:"What is current measured in?",a:"Amperes (A)"},{q:"In a series circuit, what stays the same everywhere?",a:"The current."},{q:"In a parallel circuit, what stays the same across each branch?",a:"The voltage."},{q:"What is resistance measured in?",a:"Ohms (\u03a9)"}], questions:[{q:"A circuit has voltage 12V and resistance 4\u03a9. Find the current.",a:"I = V/R = 12/4 = 3 A."},{q:"Why do household appliances use parallel circuits?",a:"So each appliance gets the full voltage and can operate independently \u2014 if one fails, others keep working."},{q:"What happens to total resistance when resistors are added in series?",a:"Total resistance increases (R_total = R1+R2+...)."}], mindmap:["Ohm's Law V=IR","Current in Amperes","Resistance in Ohms","Series: same current","Parallel: same voltage","Closed loop needed"] },
+    "Figures of Speech": { summary:["A simile compares two things using 'like' or 'as'.","A metaphor states one thing IS another, without 'like' or 'as'.","Personification gives human qualities to non-human things."], flashcards:[{q:"Definition of a simile?",a:"A comparison using 'like' or 'as' — e.g. 'brave as a lion'."},{q:"Definition of a metaphor?",a:"A direct comparison stating one thing is another — e.g. 'time is money'."},{q:"What is personification?",a:"Giving human qualities to non-human things — e.g. 'the wind whispered'."},{q:"What is hyperbole?",a:"Deliberate exaggeration for effect — e.g. 'I've told you a million times'."},{q:"What is alliteration?",a:"Repetition of the same initial consonant sound — e.g. 'she sells seashells'."}], questions:[{q:"Identify the figure of speech: 'The classroom was a zoo.'",a:"Metaphor — it states the classroom IS a zoo, without using 'like' or 'as'."},{q:"Write an original simile about courage.",a:"Example: 'As bold as a lion facing danger.'"},{q:"Why do writers use figures of speech?",a:"To create vivid imagery, evoke emotion, and make writing more engaging than literal description."}], mindmap:["Simile: like/as","Metaphor: direct comparison","Personification: human traits","Hyperbole: exaggeration","Alliteration: repeated sounds","Purpose: vivid imagery"] },
+    "Tenses": { summary:["Tense shows when an action happens: past, present, or future.","Each tense has simple, continuous, perfect, and perfect continuous forms.","Consistent tense use keeps writing clear and grammatically correct."], flashcards:[{q:"Structure of present simple tense?",a:"Subject + base verb (+s/es for third person) — e.g. 'She walks.'"},{q:"Structure of past continuous tense?",a:"Subject + was/were + verb-ing — e.g. 'They were playing.'"},{q:"Structure of present perfect tense?",a:"Subject + has/have + past participle — e.g. 'I have finished.'"},{q:"When is future perfect tense used?",a:"For an action that will be completed before a specific point in the future — e.g. 'I will have left by 5pm.'"},{q:"What signals present perfect continuous?",a:"Subject + has/have + been + verb-ing — e.g. 'She has been studying.'"}], questions:[{q:"Convert to past tense: 'I eat breakfast every day.'",a:"'I ate breakfast every day.'"},{q:"Explain the difference between simple past and present perfect.",a:"Simple past describes a completed action at a specific past time; present perfect links a past action to the present without a specific time."},{q:"Write a sentence using future continuous tense.",a:"Example: 'I will be studying at 8pm tonight.'"}], mindmap:["Past / Present / Future","Simple form","Continuous form","Perfect form","Perfect continuous form","Consistency matters"] },
+    "Active & Passive Voice": { summary:["Active voice: the subject performs the action — e.g. 'The cat chased the mouse.'","Passive voice: the subject receives the action — e.g. 'The mouse was chased by the cat.'","Passive voice is formed with a form of 'be' + past participle."], flashcards:[{q:"Example of active voice?",a:"'The chef cooked the meal.'"},{q:"Example of passive voice?",a:"'The meal was cooked by the chef.'"},{q:"How is passive voice formed?",a:"be (is/was/were/has been etc.) + past participle of the verb."},{q:"When is passive voice preferred?",a:"When the doer is unknown, unimportant, or the focus should be on the action/receiver."},{q:"Convert to passive: 'Someone stole my bike.'",a:"'My bike was stolen.'"}], questions:[{q:"Convert to passive voice: 'The teacher explains the lesson.'",a:"'The lesson is explained by the teacher.'"},{q:"Why is active voice generally preferred in writing?",a:"It's usually more direct, concise, and easier to read."},{q:"Give an example where passive voice is more appropriate than active.",a:"'The bridge was built in 1998' — the builder is unknown or unimportant, so passive fits better."}], mindmap:["Active: subject acts","Passive: subject receives","be + past participle","Used when doer unknown","Focus shifts to action","Active usually preferred"] },
+    "Comprehension Skills": { summary:["Skim the passage first to get the general idea before reading in detail.","Look for keywords in the question and locate matching parts of the passage.","Answer in your own words unless the question asks for a direct quote."], flashcards:[{q:"What should you do before reading a passage in detail?",a:"Skim it first to understand the general idea and structure."},{q:"How do you find the answer to a specific question quickly?",a:"Scan for keywords from the question within the passage."},{q:"Should you copy the passage word-for-word in answers?",a:"No — answer in your own words unless a direct quote is specifically asked for."},{q:"What is 'inference' in comprehension?",a:"Understanding something implied but not directly stated in the text."},{q:"Why is context important for vocabulary questions?",a:"Surrounding sentences often reveal the meaning of an unfamiliar word."}], questions:[{q:"What is the difference between skimming and scanning?",a:"Skimming is reading quickly for a general overview; scanning is searching for specific information like a keyword or date."},{q:"How can you infer the author's tone?",a:"By analysing word choice, sentence structure, and the overall mood conveyed by the passage."},{q:"Why should answers be supported with evidence from the passage?",a:"It shows the answer is grounded in the text and not just personal opinion, which is usually required for full marks."}], mindmap:["Skim for overview","Scan for keywords","Answer in own words","Inference: implied meaning","Vocabulary from context","Support with evidence"] },
+    "The French Revolution": { summary:["Began in 1789 due to social inequality, financial crisis, and Enlightenment ideas.","The Estates-General and the storming of the Bastille were key early events.","It ended the absolute monarchy and introduced ideas of liberty, equality, and fraternity."], flashcards:[{q:"In which year did the French Revolution begin?",a:"1789"},{q:"What event on 14 July 1789 symbolizes the revolution's start?",a:"The storming of the Bastille."},{q:"What was the revolution's famous motto?",a:"Liberty, Equality, Fraternity"},{q:"Who was the French king executed during the revolution?",a:"Louis XVI"},{q:"Name one major cause of the revolution.",a:"Social inequality between the three estates, and a severe financial crisis."}], questions:[{q:"What were the three estates in pre-revolutionary France?",a:"The clergy (First Estate), the nobility (Second Estate), and the commoners (Third Estate)."},{q:"How did Enlightenment ideas influence the revolution?",a:"Thinkers like Rousseau and Voltaire inspired ideas of liberty, equality, and questioning of absolute monarchy."},{q:"What long-term impact did the revolution have on Europe?",a:"It spread ideas of democracy and nationalism and inspired future revolutionary movements across Europe."}], mindmap:["Year: 1789","Storming of the Bastille","Three estates","Liberty, Equality, Fraternity","Louis XVI executed","Spread ideas of democracy"] },
+    "Indian Constitution": { summary:["The Constitution of India came into effect on 26 January 1950.","It is the longest written constitution of any sovereign country.","It establishes India as a sovereign, socialist, secular, democratic republic."], flashcards:[{q:"When did the Indian Constitution come into effect?",a:"26 January 1950"},{q:"Who is known as the chief architect of the Indian Constitution?",a:"Dr. B.R. Ambedkar"},{q:"What does the Preamble declare India to be?",a:"A sovereign, socialist, secular, democratic republic."},{q:"What are Fundamental Rights?",a:"Basic rights guaranteed to all citizens, such as equality, freedom, and the right against exploitation."},{q:"Which day is celebrated as Republic Day?",a:"26 January"}], questions:[{q:"Why is 26 January significant, and how does it differ from 15 August?",a:"26 January (Republic Day) marks when the Constitution came into effect; 15 August (Independence Day) marks when India gained freedom from British rule in 1947."},{q:"Name two Fundamental Rights guaranteed by the Constitution.",a:"Right to Equality and Right to Freedom (others include Right against Exploitation, Right to Freedom of Religion, Cultural & Educational Rights, and Right to Constitutional Remedies)."},{q:"Why is the Indian Constitution described as 'living'?",a:"Because it can be amended to adapt to changing social and political needs while preserving its basic structure."}], mindmap:["Effective 26 Jan 1950","Dr. B.R. Ambedkar","Sovereign, socialist, secular","Fundamental Rights","Longest written constitution","Can be amended"] },
+    "Climate & Vegetation": { summary:["Climate is the long-term weather pattern of a region; weather is short-term and day-to-day.","India has a monsoon-type climate influenced by seasonal wind reversal.","Vegetation type depends on climate, soil, and rainfall of a region."], flashcards:[{q:"Difference between weather and climate?",a:"Weather is the day-to-day atmospheric condition; climate is the average pattern over a long period (usually 30+ years)."},{q:"What type of climate does most of India experience?",a:"Monsoon-type climate, with seasonal reversal of winds."},{q:"Name the main factors that determine vegetation type.",a:"Climate, soil, and amount of rainfall."},{q:"What is a tropical rainforest known for?",a:"Dense vegetation, high rainfall, and rich biodiversity."},{q:"What is a monsoon?",a:"A seasonal wind that brings heavy rainfall, especially in South Asia."}], questions:[{q:"How does rainfall affect the type of natural vegetation in a region?",a:"Higher rainfall supports dense forests, while low-rainfall areas support grasslands or desert scrub vegetation."},{q:"Why does India experience a monsoon climate?",a:"Due to seasonal reversal of winds caused by differential heating of land and sea."},{q:"Explain one way vegetation affects local climate.",a:"Dense vegetation increases humidity and rainfall through transpiration, moderating local temperature."}], mindmap:["Weather vs climate","Monsoon-type climate","Rainfall shapes vegetation","Tropical rainforest","Grasslands","Desert vegetation"] },
+    "Resources & Development": { summary:["A resource is anything in the environment that can be used to satisfy human needs.","Resources are classified as renewable/non-renewable and biotic/abiotic.","Sustainable development means using resources to meet present needs without compromising future generations."], flashcards:[{q:"What is a resource?",a:"Anything available in the environment that can be used to satisfy human needs, given the technology to access it."},{q:"Difference between renewable and non-renewable resources?",a:"Renewable resources can replenish naturally (like solar, wind); non-renewable resources are finite and take millions of years to form (like coal, petroleum)."},{q:"What are biotic resources?",a:"Resources obtained from the biosphere — living things like forests, animals, and humans."},{q:"What is sustainable development?",a:"Development that meets present needs without compromising the ability of future generations to meet their own needs."},{q:"Give an example of a non-renewable resource.",a:"Coal or petroleum."}], questions:[{q:"Why is resource conservation important?",a:"Because many resources, especially non-renewable ones, are limited and overuse can lead to scarcity and environmental damage for future generations."},{q:"Classify land, water, and forests as resource types.",a:"Land and water are abiotic resources; forests are biotic resources."},{q:"What steps can promote sustainable use of resources?",a:"Recycling, using renewable energy sources, efficient resource use, and equitable distribution."}], mindmap:["Definition of resource","Renewable vs non-renewable","Biotic vs abiotic","Sustainable development","Conservation","Equitable distribution"] }
+  };
+
+  function genericPack(topic, subject){
+    return {
+      summary:[`${topic} is a key topic in ${subject}. Understanding its core definition is the first step.`,`Focus on how ${topic} connects to other concepts you've already studied in ${subject}.`,`Practice applying ${topic} to example problems to move it from recognition to recall.`],
+      flashcards:[{q:`What is ${topic}?`,a:`Revisit your ${subject} lesson notes to fill in a precise definition here.`},{q:`Why does ${topic} matter in ${subject}?`,a:`Think about where this concept is applied — that's usually the "why".`},{q:`Give one example related to ${topic}.`,a:`Pull an example from your saved lesson or textbook.`},{q:`What's a common mistake students make with ${topic}?`,a:`Check your quick-check quiz results for this topic to spot your own pattern.`}],
+      questions:[{q:`Explain ${topic} in your own words.`,a:`A strong answer restates the definition and adds one example.`},{q:`How does ${topic} relate to real life?`,a:`Look for a practical application — exam answers that connect theory to real life often score higher.`}],
+      mindmap:[`What is ${topic}?`,`Key definition`,`One example`,`Common mistake`,`How it's used`]
+    };
+  }
+
+  function getPack(topic, subject){
+    return REVISION_BANK[topic] || genericPack(topic, subject);
+  }
+
+  // ---------- Subject / topic selectors ----------
+  const subjectSelect = document.getElementById('subjectSelect');
+  const topicSelect = document.getElementById('topicSelect');
+  Object.keys(d.subjects).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    if(s === d.weakSubject) opt.selected = true;
+    subjectSelect.appendChild(opt);
+  });
+  function populateTopics(){
+    topicSelect.innerHTML = '';
+    const list = topicsBySubject[subjectSelect.value] || [];
+    list.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t;
+      topicSelect.appendChild(opt);
+    });
+  }
+  subjectSelect.addEventListener('change', populateTopics);
+  populateTopics();
+
+  function renderSuggestions(){
+    const chipsEl = document.getElementById('suggestChips');
+    chipsEl.innerHTML = '';
+    const list = topicsBySubject[d.weakSubject] || topicsBySubject.Maths;
+    list.forEach(t => {
+      const chip = document.createElement('button');
+      chip.className = 'suggest-chip';
+      chip.textContent = t;
+      chip.addEventListener('click', () => { subjectSelect.value = d.weakSubject; populateTopics(); topicSelect.value = t; buildPack(t, d.weakSubject); });
+      chipsEl.appendChild(chip);
+    });
+  }
+  renderSuggestions();
+
+  // ---------- Saved-from-canvas chips ----------
+  function renderSavedChips(){
+    const saved = getSaved();
+    const wrap = document.getElementById('savedChips');
+    const empty = document.getElementById('savedEmpty');
+    wrap.innerHTML = '';
+    if(!saved.length){ empty.style.display = 'block'; wrap.style.display = 'none'; return; }
+    empty.style.display = 'none'; wrap.style.display = 'flex';
+    saved.forEach(s => {
+      const chip = document.createElement('div');
+      chip.className = 'saved-chip';
+      chip.innerHTML = `<span>🔖 ${s.topic}</span><span class="subj">· ${s.subject}</span><span class="remove" title="Remove">✕</span>`;
+      chip.addEventListener('click', (e) => {
+        if(e.target.classList.contains('remove')) return;
+        subjectSelect.value = s.subject; populateTopics();
+        if([...topicSelect.options].some(o => o.value === s.topic)) topicSelect.value = s.topic;
+        buildPack(s.topic, s.subject);
+      });
+      chip.querySelector('.remove').addEventListener('click', () => {
+        setSaved(getSaved().filter(x => x.topic !== s.topic));
+        renderSavedChips();
+        showToast('Removed from saved lessons.');
+      });
+      wrap.appendChild(chip);
+    });
+  }
+  renderSavedChips();
+
+  // ---------- Build revision pack ----------
+  let currentPack = null, currentTopic = null, currentSubject = null;
+  let fcIndex = 0, fcKnown = 0, fcSeen = [];
+
+  function buildPack(topic, subject){
+    currentTopic = topic; currentSubject = subject;
+    currentPack = getPack(topic, subject);
+    document.getElementById('pack').classList.add('show');
+    document.getElementById('packTitle').textContent = topic;
+    document.getElementById('packSubjectTag').textContent = subject;
+
+    fcIndex = 0; fcKnown = 0; fcSeen = new Array(currentPack.flashcards.length).fill(null);
+    renderFlashcard();
+    renderMindmap();
+    renderSummary();
+    renderQuestions();
+    switchMode('flashcards');
+
+    const doneAlready = progress.revisedTopics.includes(`${subject}::${topic}`);
+    updateCompleteBtn(doneAlready);
+
+    document.getElementById('pack').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    if(!topicSelect.value) return;
+    buildPack(topicSelect.value, subjectSelect.value);
+  });
+
+  // ---------- Mode tabs ----------
+  function switchMode(mode){
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + mode).classList.add('active');
+    // Mind map is measured from its own box size — that box is display:none until this
+    // tab is actually active, so re-render now that it's visible and correctly sized
+    // (fixes it sometimes showing blank / cut-off / overlapping nodes).
+    if(mode === 'mindmap' && currentPack) requestAnimationFrame(renderMindmap);
+  }
+  document.querySelectorAll('.mode-tab').forEach(t => t.addEventListener('click', () => switchMode(t.dataset.mode)));
+
+  // ---------- Flashcards ----------
+  function renderFlashcard(){
+    const cards = currentPack.flashcards;
+    document.getElementById('fcActive').style.display = 'block';
+    document.getElementById('fcDone').classList.remove('show');
+    const card = cards[fcIndex];
+    document.getElementById('fcFront').textContent = card.q;
+    document.getElementById('fcBack').textContent = card.a;
+    document.getElementById('fcCard').classList.remove('flipped');
+    document.getElementById('fcCount').textContent = `${fcIndex+1} / ${cards.length}`;
+    document.getElementById('fcProgressFill').style.width = `${Math.round(((fcIndex)/cards.length)*100)}%`;
+  }
+  document.getElementById('fcCard').addEventListener('click', () => {
+    document.getElementById('fcCard').classList.toggle('flipped');
+  });
+  function fcAdvance(){
+    const cards = currentPack.flashcards;
+    if(fcIndex < cards.length - 1){ fcIndex++; renderFlashcard(); }
+    else { finishDeck(); }
+  }
+  document.getElementById('fcKnow').addEventListener('click', () => { if(fcSeen[fcIndex] === null) fcKnown++; fcSeen[fcIndex] = true; fcAdvance(); });
+  document.getElementById('fcAgain').addEventListener('click', () => { fcSeen[fcIndex] = false; fcAdvance(); });
+  document.getElementById('fcPrev').addEventListener('click', () => { if(fcIndex > 0){ fcIndex--; renderFlashcard(); } });
+  document.getElementById('fcNext').addEventListener('click', () => { fcAdvance(); });
+  function finishDeck(){
+    document.getElementById('fcActive').style.display = 'none';
+    document.getElementById('fcDone').classList.add('show');
+    document.getElementById('fcProgressFill').style.width = '100%';
+    document.getElementById('fcDoneSummary').textContent = `You knew ${fcKnown} of ${currentPack.flashcards.length} cards. ${fcKnown === currentPack.flashcards.length ? 'Perfect run!' : 'Go again to lock in the rest.'}`;
+  }
+  document.getElementById('fcRestart').addEventListener('click', () => { fcIndex = 0; fcKnown = 0; fcSeen = new Array(currentPack.flashcards.length).fill(null); renderFlashcard(); });
+
+  // ---------- Mind map ----------
+  function renderMindmap(){
+    document.getElementById('mmCenter').textContent = currentTopic;
+    const wrap = document.getElementById('mmWrap');
+    const lines = document.getElementById('mmLines');
+    wrap.querySelectorAll('.mm-node').forEach(n => n.remove());
+    lines.innerHTML = '';
+    const branches = currentPack.mindmap;
+    const w = wrap.clientWidth || 700, h = wrap.clientHeight || 420;
+    const cx = w/2, cy = h/2;
+    const radiusX = Math.min(w*0.38, 300), radiusY = Math.min(h*0.36, 160);
+    branches.forEach((label, i) => {
+      const angle = (i / branches.length) * Math.PI * 2 - Math.PI/2;
+      const x = cx + radiusX * Math.cos(angle);
+      const y = cy + radiusY * Math.sin(angle);
+      const node = document.createElement('div');
+      node.className = 'mm-node';
+      node.style.left = x + 'px'; node.style.top = y + 'px';
+      node.textContent = label;
+      wrap.appendChild(node);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+      line.setAttribute('x2', x); line.setAttribute('y2', y);
+      lines.appendChild(line);
+    });
+  }
+
+  // ---------- Summary ----------
+  function renderSummary(){
+    const el = document.getElementById('summaryList');
+    el.innerHTML = '';
+    currentPack.summary.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'summary-item';
+      row.innerHTML = `<div class="bullet">${i+1}</div><p>${s}</p>`;
+      el.appendChild(row);
+    });
+  }
+
+  // ---------- Important questions ----------
+  function renderQuestions(){
+    const el = document.getElementById('iqList');
+    el.innerHTML = '';
+    currentPack.questions.forEach((q, i) => {
+      const item = document.createElement('div');
+      item.className = 'iq-item';
+      item.innerHTML = `<h5>${i+1}. ${q.q}</h5><button class="reveal-btn">Reveal answer</button><div class="reveal-answer">${q.a}</div>`;
+      item.querySelector('.reveal-btn').addEventListener('click', function(){
+        const ans = item.querySelector('.reveal-answer');
+        ans.classList.toggle('show');
+        this.textContent = ans.classList.contains('show') ? 'Hide answer' : 'Reveal answer';
+      });
+      el.appendChild(item);
+    });
+  }
+
+  // ---------- Mark revision complete (feeds the shared progress store) ----------
+  function updateCompleteBtn(done){
+    const btn = document.getElementById('completeBtn');
+    btn.classList.toggle('done', done);
+    btn.innerHTML = done ? '<span class="icon">✓</span> Revision session saved' : '<span class="icon">✓</span> Mark revision complete';
+    document.getElementById('completeText').textContent = done
+      ? 'Nice — this session is counted in your progress and activity feed.'
+      : "Go through the flashcards or questions above, then mark this revision session complete.";
+  }
+
+  document.getElementById('completeBtn').addEventListener('click', () => {
+    const key = `${currentSubject}::${currentTopic}`;
+    if(progress.revisedTopics.includes(key)){ showToast('Already counted for this topic.'); return; }
+    progress.revisedTopics.push(key);
+    progress.lessonsCompleted += 1;
+    if(progress.streak === 0) progress.streak = 1;
+    if(progress.streak > progress.bestStreak) progress.bestStreak = progress.streak;
+    if(progress.subjectProgress.hasOwnProperty(currentSubject)){
+      progress.subjectProgress[currentSubject] = Math.min(100, progress.subjectProgress[currentSubject] + 15);
+    }
+    progress.activity = progress.activity || [];
+    progress.activity.unshift({ icon:'🗂️', text:`Revised: ${currentTopic}`, time: new Date().toISOString() });
+    progress.activity = progress.activity.slice(0,6);
+    saveProgress();
+    updateCompleteBtn(true);
+    showToast('Revision session saved to your progress!');
+  });
+
+  window.addEventListener('resize', () => { if(currentPack) renderMindmap(); });
+
+  // Sidebar nav visual state (real links, no extra JS needed — this just guards against stray divs)
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if(item.tagName !== 'A'){
+      item.addEventListener('click', () => showToast('Coming soon.'));
+    }
+  });
+</script>
+</body>
+</html>

@@ -372,7 +372,7 @@
     </div>
 
     <h2 style="margin-top:34px;font-size:22px;">How much time can you give daily?</h2>
-    <p class="stage-sub" style="margin-bottom:18px;">Your study planner will be built around this honestly, not optimistically.</p>
+    <p class="stage-sub" style="margin-bottom:18px;">Your lessons and quizzes will be built around this honestly, not optimistically.</p>
     <div class="opt-grid" id="timeGrid">
       <div class="opt" data-value="30 min"><span class="opt-emoji">⏱️</span><span class="opt-label">~30 min</span></div>
       <div class="opt" data-value="1 hour"><span class="opt-emoji">⏰</span><span class="opt-label">~1 hour</span></div>
@@ -625,7 +625,18 @@
   }
 
   document.getElementById('finishBtn').addEventListener('click', ()=>{
-    alert('This would now route to the student dashboard (Phase 4) in the live app.');
+    const dna = {
+      classLevel: state.classLevel,
+      board: state.board,
+      subjects: state.subjects,
+      style: computeStyle(),
+      weakSubject: weakestSubject(),
+      goals: state.goals,
+      language: state.language,
+      time: state.time
+    };
+    localStorage.setItem('learnmate_dna', JSON.stringify(dna));
+    window.location.href = 'learnmate-dashboard.html';
   });
 
   updateProgress();

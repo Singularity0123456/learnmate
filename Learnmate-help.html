@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LearnMate AI — Help & Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#4F46E5; --primary-light:#6366F1; --secondary:#7C3AED; --accent:#06B6D4;
+    --success:#22C55E; --warning:#F59E0B; --danger:#EF4444;
+    --bg:#F7F8FC; --surface:#FFFFFF; --ink:#12131A; --ink-soft:#5B5F73;
+    --border:rgba(18,19,26,0.08); --glass:rgba(255,255,255,0.6);
+    --radius:18px; --shadow:0 10px 40px -12px rgba(79,70,229,0.18);
+    --font-display:'Space Grotesk', sans-serif; --font-body:'Inter', sans-serif;
+    --sidebar-w:250px;
+  }
+  [data-theme="dark"]{
+    --bg:#0A0D1A; --surface:#12162A; --ink:#F2F3F8; --ink-soft:#9498B0;
+    --border:rgba(255,255,255,0.08); --glass:rgba(18,22,42,0.6);
+    --shadow:0 10px 45px -12px rgba(124,58,237,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+  body{font-family:var(--font-body);background:var(--bg);color:var(--ink);transition:background 0.4s,color 0.4s;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  ::selection{background:var(--primary);color:#fff;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;}
+  .icon{font-style:normal;line-height:1;display:inline-block;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar (shared) ---------- */
+  .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:17px;padding:0 8px;margin-bottom:30px;}
+  .logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(150deg,#8B7CF6,var(--primary) 55%,var(--secondary));display:flex;align-items:center;justify-content:center;color:#fff;position:relative;box-shadow:0 6px 16px -4px rgba(79,70,229,0.5);flex-shrink:0;}
+  .logo-mark svg.cap-icon{width:16px;height:16px;}
+  .logo-mark svg.sparkle{position:absolute;top:-5px;right:-6px;width:12px;height:12px;}
+  .nav-group{margin-bottom:22px;}
+  .nav-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);padding:0 12px;margin-bottom:8px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;font-size:14px;font-weight:500;color:var(--ink-soft);transition:all 0.2s;margin-bottom:2px;}
+  .nav-item .icon{width:18px;text-align:center;font-size:15px;}
+  .nav-item:hover{background:var(--border);color:var(--ink);}
+  .nav-item.active{background:linear-gradient(135deg,rgba(79,70,229,0.12),rgba(124,58,237,0.1));color:var(--primary);font-weight:700;}
+  .sidebar-bottom{margin-top:auto;}
+  .plan-card{background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;padding:16px;color:#fff;margin-bottom:14px;}
+  .plan-card .icon{font-size:20px;margin-bottom:8px;display:block;}
+  .plan-card h5{font-size:13px;font-family:var(--font-display);margin-bottom:4px;}
+  .plan-card p{font-size:11.5px;opacity:0.85;margin-bottom:12px;line-height:1.4;}
+  .plan-card button{background:#fff;color:var(--primary);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;width:100%;}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;transition:background 0.2s;}
+  .user-chip:hover{background:var(--border);}
+  .user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+  .user-chip .u-name{font-size:13px;font-weight:700;}
+  .user-chip .u-meta{font-size:11px;color:var(--ink-soft);}
+  .user-chip .logout{margin-left:auto;color:var(--ink-soft);font-size:14px;}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:10;background:var(--glass);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:20px;}
+  .search-wrap{flex:1;max-width:420px;position:relative;}
+  .search-wrap .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:14px;}
+  .search-wrap input{width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13.5px;}
+  .search-wrap input:focus{outline:none;border-color:var(--primary);}
+  .topbar-actions{display:flex;align-items:center;gap:12px;margin-left:auto;}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);position:relative;transition:all 0.2s;font-size:15px;}
+  .icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+
+  .content{padding:30px 32px 70px;max-width:820px;}
+  .page-head{margin-bottom:22px;}
+  .page-head .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--primary);background:rgba(79,70,229,0.09);padding:6px 12px;border-radius:100px;margin-bottom:12px;}
+  .page-head h1{font-family:var(--font-display);font-size:27px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .page-head p{color:var(--ink-soft);font-size:14px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+  .card-head{margin-bottom:18px;}
+  .card-head h3{font-family:var(--font-display);font-size:16.5px;letter-spacing:-0.01em;display:flex;align-items:center;gap:9px;margin-bottom:4px;}
+  .card-head h3 .icon{color:var(--primary);font-size:15px;}
+  .card-head p{font-size:12.5px;color:var(--ink-soft);}
+
+  .form-row{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+  .field{flex:1;min-width:180px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:7px;}
+  .field select, .field input{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:13.5px;font-family:inherit;}
+  .field select:focus, .field input:focus{outline:none;border-color:var(--primary);}
+
+  /* ---------- Toggle rows ---------- */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);}
+  .toggle-row:last-child{border-bottom:none;padding-bottom:0;}
+  .toggle-row:first-child{padding-top:0;}
+  .toggle-text h5{font-size:13.5px;font-weight:700;margin-bottom:3px;}
+  .toggle-text span{font-size:12px;color:var(--ink-soft);}
+  .switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;position:absolute;}
+  .switch .track{position:absolute;inset:0;background:var(--border);border-radius:100px;transition:all 0.25s;cursor:pointer;}
+  .switch .track::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:all 0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .switch input:checked + .track{background:linear-gradient(135deg,var(--primary),var(--secondary));}
+  .switch input:checked + .track::after{transform:translateX(18px);}
+
+  .save-btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:12px;font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;box-shadow:0 8px 20px -6px rgba(79,70,229,0.5);transition:all 0.25s;}
+  .save-btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px -6px rgba(79,70,229,0.6);}
+
+  .danger-card{border-color:rgba(239,68,68,0.25);}
+  .danger-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .danger-row:last-child{border-bottom:none;padding-bottom:0;}
+  .danger-row:first-child{padding-top:0;}
+  .danger-text h5{font-size:13.5px;font-weight:700;margin-bottom:3px;}
+  .danger-text span{font-size:12px;color:var(--ink-soft);}
+  .danger-btn{padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;color:var(--danger);border:1px solid rgba(239,68,68,0.3);transition:all 0.2s;flex-shrink:0;}
+  .danger-btn:hover{background:rgba(239,68,68,0.08);}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);padding:14px 18px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;transform:translateY(120%);opacity:0;transition:all 0.35s cubic-bezier(.2,.8,.2,1);z-index:100;}
+  .toast.show{transform:translateY(0);opacity:1;}
+
+  @media (max-width:820px){
+    .sidebar{display:none;}
+    .content{padding:24px 18px 50px;}
+    .topbar{padding:14px 18px;}
+  }
+
+  /* ---------- Help & Support additions ---------- */
+  .help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .help-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all 0.2s;cursor:pointer;}
+  .help-tile:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 10px 24px -10px rgba(79,70,229,0.3);}
+  .help-tile .icon{font-size:22px;display:block;margin-bottom:10px;}
+  .help-tile h5{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .help-tile span{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+
+  .search-help{position:relative;margin-bottom:22px;}
+  .search-help .icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:15px;}
+  .search-help input{width:100%;padding:14px 16px 14px 42px;border-radius:13px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:14px;font-family:inherit;}
+  .search-help input:focus{outline:none;border-color:var(--primary);}
+
+  .faq-item{border-bottom:1px solid var(--border);}
+  .faq-item:last-child{border-bottom:none;}
+  .faq-q{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 2px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .faq-q .icon{color:var(--ink-soft);font-size:12px;transition:transform 0.25s;flex-shrink:0;}
+  .faq-item.open .faq-q .icon{transform:rotate(45deg);color:var(--primary);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height 0.3s ease, padding 0.3s ease;font-size:13px;color:var(--ink-soft);line-height:1.65;}
+  .faq-item.open .faq-a{max-height:300px;padding-bottom:16px;}
+
+  .contact-people{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px;}
+  .person-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;}
+  .person-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;}
+  .person-info h5{font-size:13.5px;font-weight:700;margin-bottom:2px;}
+  .person-info span{font-size:11.5px;color:var(--ink-soft);}
+
+  .contact-methods{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+  .contact-method{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--border);transition:all 0.2s;}
+  .contact-method:hover{border-color:var(--primary);}
+  .contact-method .icon{width:36px;height:36px;border-radius:10px;background:rgba(79,70,229,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .contact-method .cm-text h5{font-size:13px;font-weight:700;margin-bottom:2px;}
+  .contact-method .cm-text span{font-size:12.5px;color:var(--ink-soft);}
+  .contact-method .cm-text a{color:var(--ink);}
+
+  .form-field{margin-bottom:14px;}
+  .form-field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:7px;}
+  .form-field input, .form-field select, .form-field textarea{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:13.5px;font-family:inherit;resize:vertical;}
+  .form-field textarea{min-height:100px;}
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus{outline:none;border-color:var(--primary);}
+
+  @media (max-width:640px){
+    .help-grid{grid-template-columns:1fr;}
+    .contact-people{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="learnmate-landing.html" class="logo"><span class="logo-mark"><svg class="cap-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5L2.5 8.2 12 12.9l7.5-3.7V15h1.5V8.2L12 3.5z" fill="white"/><path d="M6 10.7v3.4c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2v-3.4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5c.15 1.6.6 2.35 2.3 2.6-1.7.25-2.15 1-2.3 2.6-.15-1.6-.6-2.35-2.3-2.6 1.7-.25 2.15-1 2.3-2.6z" fill="white"/></svg></span>LearnMate AI</a>
+
+    <div class="nav-group">
+      <a href="learnmate-dashboard.html" class="nav-item"><span class="icon">🏠</span> Dashboard</a>
+      <a href="learnmate-canvas.html" class="nav-item"><span class="icon">🪄</span> AI Learning Canvas</a>
+      <a href="learnmate-quiz.html" class="nav-item"><span class="icon">❓</span> Adaptive Quizzes</a>
+      <a href="learnmate-revision.html" class="nav-item"><span class="icon">🗂️</span> Smart Revision</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Insights</div>
+      <a href="learnmate-analytics.html" class="nav-item"><span class="icon">📈</span> Analytics</a>
+      <a href="learnmate-learning-dna.html" class="nav-item"><span class="icon">🧬</span> Learning DNA</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Account</div>
+      <a href="learnmate-settings.html" class="nav-item"><span class="icon">⚙️</span> Settings</a>
+      <a href="learnmate-help.html" class="nav-item active"><span class="icon">ℹ️</span> Help &amp; Support</a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="plan-card">
+        <span class="icon">💬</span>
+        <h5>Still stuck?</h5>
+        <p>Reach our team directly and we'll get back to you.</p>
+        <button onclick="document.getElementById('messageInput').focus()">Contact us</button>
+      </div>
+      <a href="learnmate-dashboard.html" class="user-chip">
+        <div class="user-avatar" id="userInitial">S</div>
+        <div>
+          <div class="u-name" id="userName">Student</div>
+          <div class="u-meta" id="userMeta">Class — · —</div>
+        </div>
+        <span class="icon logout">🚪</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Ask anything — Photosynthesis, Newton's laws, Trigonometry...">
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle icon-btn" id="themeToggle" aria-label="Toggle dark mode"><span class="icon">🌙</span></button>
+        <button class="icon-btn"><span class="icon">🔔</span></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div class="eyebrow"><span class="icon">ℹ️</span> Help & Support</div>
+        <h1>How can we help?</h1>
+        <p>Search common questions, browse topics, or reach the team directly.</p>
+      </div>
+
+      <div class="search-help">
+        <span class="icon">🔍</span>
+        <input type="text" id="helpSearch" placeholder="Search for help — Learning DNA, quizzes, account, revision...">
+      </div>
+
+      <!-- Quick topics -->
+      <div class="help-grid">
+        <div class="help-tile" data-jump="faqGettingStarted">
+          <span class="icon">🚀</span>
+          <h5>Getting started</h5>
+          <span>Account setup, Learning DNA assessment and your first lesson.</span>
+        </div>
+        <div class="help-tile" data-jump="faqCanvas">
+          <span class="icon">🪄</span>
+          <h5>AI Learning Canvas</h5>
+          <span>How adaptive lessons, quizzes and revision actually work.</span>
+        </div>
+        <div class="help-tile" data-jump="faqAccount">
+          <span class="icon">👤</span>
+          <h5>Account & data</h5>
+          <span>Profile changes, resetting progress, and where your data lives.</span>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="card">
+        <div class="card-head"><h3><span class="icon">❓</span> Frequently asked questions</h3><p>Can't find your answer? Reach out to us below.</p></div>
+        <div id="faqList">
+          <div class="faq-item open" data-topic="faqGettingStarted">
+            <div class="faq-q"><span>How do I set up my Learning DNA?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Head to the assessment from your dashboard and answer a short set of questions about your class, board, subjects and study style. LearnMate AI uses this to personalize every lesson, quiz and revision set it builds for you.</div>
+          </div>
+          <div class="faq-item" data-topic="faqGettingStarted">
+            <div class="faq-q"><span>Is LearnMate AI free to use?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Yes, schools and individual students can use the core Learning Canvas, quizzes and revision tools at no cost. No credit card is required to create an account.</div>
+          </div>
+          <div class="faq-item" data-topic="faqCanvas">
+            <div class="faq-q"><span>Why does LearnMate AI build a full lesson instead of just answering my question?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Instead of a chat reply, every question generates a structured lesson page — diagrams, worked examples, a short quiz and notes — tailored to your Learning DNA, so you actually understand the concept rather than just get an answer.</div>
+          </div>
+          <div class="faq-item" data-topic="faqCanvas">
+            <div class="faq-q"><span>Can I ask about topics outside school subjects?</span><i class="icon">✚</i></div>
+            <div class="faq-a">No. LearnMate AI only responds to educational queries related to your curriculum. Anything outside academics is politely declined by design to keep the experience focused on learning.</div>
+          </div>
+          <div class="faq-item" data-topic="faqCanvas">
+            <div class="faq-q"><span>How does Smart Revision decide what to show me?</span><i class="icon">✚</i></div>
+            <div class="faq-a">It tracks the topics you've struggled with in quizzes and lessons, then resurfaces them at spaced intervals so weaker areas get more practice without you having to plan it yourself.</div>
+          </div>
+          <div class="faq-item" data-topic="faqAccount">
+            <div class="faq-q"><span>Where is my data stored?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Your progress, streaks, quiz scores and Learning DNA profile are stored locally on your device. Nothing is uploaded to an external server.</div>
+          </div>
+          <div class="faq-item" data-topic="faqAccount">
+            <div class="faq-q"><span>How do I reset my progress or retake the assessment?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Go to Settings → Your data. You can reset progress (streaks, quiz scores, completed lessons) or reset your Learning DNA separately, whichever you need.</div>
+          </div>
+          <div class="faq-item" data-topic="faqAccount">
+            <div class="faq-q"><span>Which classes and boards are supported?</span><i class="icon">✚</i></div>
+            <div class="faq-a">Class 1 through 12, across CBSE, ICSE and major state boards, with support for English and several regional languages.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact the team -->
+      <div class="card">
+        <div class="card-head"><h3><span class="icon">🧑‍💻</span> Contact the team</h3><p>Built and maintained by the LearnMate AI founding team.</p></div>
+        <div class="contact-people">
+          <div class="person-card">
+            <div class="person-avatar">SK</div>
+            <div class="person-info"><h5>Shiv Khandelwal</h5><span>Founding team</span></div>
+          </div>
+          <div class="person-card">
+            <div class="person-avatar">SK</div>
+            <div class="person-info"><h5>Shaurya Kashyap</h5><span>Founding team</span></div>
+          </div>
+        </div>
+        <div class="contact-methods">
+          <div class="contact-method">
+            <span class="icon">📞</span>
+            <div class="cm-text"><h5>Call us</h5><span><a href="tel:+919992323009">+91 99923 23009</a></span></div>
+          </div>
+          <div class="contact-method">
+            <span class="icon">✉️</span>
+            <div class="cm-text"><h5>Email us</h5><span><a href="mailto:seyiso8637@copawoke.com">seyiso8637@copawoke.com</a></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Send a message -->
+      <div class="card">
+        <div class="card-head"><h3><span class="icon">📩</span> Send us a message</h3><p>Describe your issue and we'll get back to you by email.</p></div>
+        <div class="form-row">
+          <div class="field">
+            <label for="helpName">Your name</label>
+            <input type="text" id="helpName" placeholder="Your name">
+          </div>
+          <div class="field">
+            <label for="helpEmail">Your email</label>
+            <input type="email" id="helpEmail" placeholder="you@example.com">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="helpTopic">Topic</label>
+          <select id="helpTopic">
+            <option>Getting started</option>
+            <option>AI Learning Canvas</option>
+            <option>Quizzes & revision</option>
+            <option>Account & data</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="messageInput">Message</label>
+          <textarea id="messageInput" placeholder="Tell us what's going on..."></textarea>
+        </div>
+        <button class="save-btn" id="sendMessageBtn"><span class="icon">📨</span> Send message</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="icon">✅</span><span id="toastText">Saved!</span></div>
+
+<script>
+  // ---------- Theme ----------
+  const THEME_KEY = 'learnmate_theme';
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  const darkToggle = document.getElementById('darkToggle');
+  function applyTheme(isDark){
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    toggle.querySelector('.icon').textContent = isDark ? '☀️' : '🌙';
+    darkToggle.checked = isDark;
+  }
+  let storedDark = false;
+  try{ storedDark = localStorage.getItem(THEME_KEY) === 'dark'; }catch(e){}
+  applyTheme(storedDark);
+  function setTheme(isDark){ applyTheme(isDark); try{ localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light'); }catch(e){} }
+  toggle.addEventListener('click', () => setTheme(root.getAttribute('data-theme') !== 'dark'));
+  darkToggle.addEventListener('change', () => setTheme(darkToggle.checked));
+
+  function showToast(text){
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  // ---------- Profile chip (name/class/board, read-only display here) ----------
+  const PROFILE_KEY = 'learnmate_profile';
+  const DNA_KEY = 'learnmate_dna';
+  let profile = null, dna = null;
+  try{ profile = JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
+  try{ dna = JSON.parse(localStorage.getItem(DNA_KEY)); }catch(e){}
+  const name = (profile && profile.name) || 'Student';
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userInitial').textContent = name.trim().charAt(0).toUpperCase() || 'S';
+  document.getElementById('userMeta').textContent = `Class ${(dna && dna.classLevel) || '—'} · ${(dna && dna.board) || '—'}`;
+  if(profile && profile.name){
+    document.getElementById('helpName').value = profile.name;
+  }
+
+  // ---------- FAQ accordion ----------
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      q.parentElement.classList.toggle('open');
+    });
+  });
+
+  // ---------- Quick topic tiles jump to & open matching FAQ group ----------
+  document.querySelectorAll('.help-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const topic = tile.dataset.jump;
+      document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.toggle('open', item.dataset.topic === topic);
+      });
+      document.getElementById('faqList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  // ---------- Search filters the FAQ list ----------
+  document.getElementById('helpSearch').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.faq-item').forEach(item => {
+      const text = item.textContent.toLowerCase();
+      const match = !q || text.includes(q);
+      item.style.display = match ? '' : 'none';
+      if(q && match) item.classList.add('open');
+    });
+  });
+
+  // ---------- Send message (front-end only, mailto handoff) ----------
+  document.getElementById('sendMessageBtn').addEventListener('click', () => {
+    const yourName = document.getElementById('helpName').value.trim();
+    const yourEmail = document.getElementById('helpEmail').value.trim();
+    const topic = document.getElementById('helpTopic').value;
+    const message = document.getElementById('messageInput').value.trim();
+    if(!message){ showToast('Write a message first.'); return; }
+    const subject = encodeURIComponent(`LearnMate AI support — ${topic}`);
+    const body = encodeURIComponent(`${message}\n\n— ${yourName || 'A LearnMate AI user'}${yourEmail ? ' (' + yourEmail + ')' : ''}`);
+    window.location.href = `mailto:seyiso8637@copawoke.com?subject=${subject}&body=${body}`;
+    showToast('Opening your email app...');
+  });
+</script>
+</body>
+</html>
