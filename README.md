@@ -51,6 +51,7 @@ If you deploy the backend somewhere other than `localhost:3001`, update the
 
 - `POST /api/generate-lesson` — body: `{ subject, topic, learningStyle, confidence, classLevel, board, language }` → returns a full structured lesson (steps, visual notes, story, practice, fill-in-the-blanks, quiz).
 - `POST /api/ask-question` — body: `{ topic, subject, question, learningStyle }` → returns `{ answer }`.
+- `POST /api/generate-question` — body: `{ subject, topic, difficulty, classLevel, board, language, askedQuestions }` → returns ONE fresh multiple-choice question `{ question, options, correctIndex, explanation, difficulty }`. Used by the Adaptive Quiz page, which calls this once per question and raises/lowers `difficulty` live based on whether the previous answer was right or wrong.
 - `GET /api/health` — quick check that the server + key are configured.
 
 ## Notes

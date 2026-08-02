@@ -108,6 +108,19 @@ async function callGemini(promptText, schema) {
   return JSON.parse(text);
 }
 
+// ---------- Shared JSON schema every adaptive quiz question must follow ----------
+const questionSchema = {
+  type: 'object',
+  properties: {
+    question: { type: 'string' },
+    options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+    correctIndex: { type: 'integer', description: 'Zero-based index of the correct option in options' },
+    explanation: { type: 'string', description: 'One or two sentence explanation of why the correct answer is right' },
+    difficulty: { type: 'string', enum: ['Foundational', 'Building Up', 'Advanced'] }
+  },
+  required: ['question', 'options', 'correctIndex', 'explanation', 'difficulty']
+};
+
 // ---------- POST /api/generate-lesson ----------
 app.post('/api/generate-lesson', async (req, res) => {
   try {
@@ -177,6 +190,51 @@ Answer in 2-4 sentences, in plain, simple, encouraging language suitable for a s
   } catch (err) {
     console.error('ask-question error:', err.message);
     res.status(500).json({ error: 'Failed to get answer', detail: err.message });
+  }
+});
+
+// ---------- POST /api/generate-question ----------
+// Generates ONE fresh adaptive-quiz question at a time. The frontend decides the next
+// difficulty level based on whether the previous answer was right or wrong, and sends
+// the list of questions already asked so Gemini avoids repeating itself.
+app.post('/api/generate-question', async (req, res) => {
+  try {
+    const { subject, topic, difficulty, classLevel, board, language, askedQuestions } = req.body;
+    if (!subject || !difficulty) {
+      return res.status(400).json({ error: 'subject and difficulty are required' });
+    }
+
+    const askedList = Array.isArray(askedQuestions) && askedQuestions.length
+      ? `\n\nQuestions already asked in this session (do NOT repeat these or close variants of them):\n${askedQuestions.map(q => `- ${q}`).join('\n')}`
+      : '';
+
+    const topicLine = topic && topic.trim()
+      ? `Focus specifically on the topic "${topic}" within ${subject}.`
+      : `Draw from across the general ${subject} curriculum for this class (any topic a student at this level would have covered).`;
+
+    const prompt = `You are an adaptive quiz engine inside LearnMate AI, generating ONE multiple-choice
+question at a time for a Class ${classLevel || '10'} student following the ${board || 'CBSE'} curriculum in India.
+
+Subject: ${subject}
+${topicLine}
+Required difficulty for this question: ${difficulty}
+Preferred language: ${language || 'English'}
+${askedList}
+
+Generate exactly ONE fresh multiple-choice question as JSON matching the given schema:
+- Exactly 4 options, only one correct.
+- "correctIndex" is the zero-based index of the correct option.
+- "explanation" briefly justifies the correct answer.
+- "difficulty" must echo back "${difficulty}".
+- The question must be original and not a repeat of anything in the "already asked" list above.
+
+Do not include any text outside the JSON.`;
+
+    const question = await callGemini(prompt, questionSchema);
+    res.json(question);
+  } catch (err) {
+    console.error('generate-question error:', err.message);
+    res.status(500).json({ error: 'Failed to generate quiz question', detail: err.message });
   }
 });
 
